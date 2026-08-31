@@ -1,7 +1,7 @@
 import { ArrowLeft, ArrowUpRight, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-type CategoryId = 'commercial' | 'culture' | 'portrait';
+type CategoryId = 'commercial' | 'automotive' | 'culture' | 'fashion' | 'portrait' | 'space';
 type InfoPanel = 'about' | 'contact';
 
 type Work = {
@@ -57,7 +57,7 @@ const works: Work[] = [
     ],
   },
   {
-    category: 'commercial',
+    category: 'automotive',
     title: '公路以北',
     enTitle: 'NORTHBOUND',
     type: '汽车广告',
@@ -75,7 +75,7 @@ const works: Work[] = [
     ],
   },
   {
-    category: 'culture',
+    category: 'fashion',
     title: '她的第二层皮肤',
     enTitle: 'SECOND SKIN',
     type: '时装影像',
@@ -111,7 +111,7 @@ const works: Work[] = [
     ],
   },
   {
-    category: 'portrait',
+    category: 'space',
     title: '留白',
     enTitle: 'ROOM TO BREATHE',
     type: '空间短片',
@@ -139,24 +139,45 @@ const categories: Array<{
 }> = [
   {
     id: 'commercial',
-    title: '品牌与商业',
-    enTitle: 'BRAND / COMMERCIAL',
-    description: '品牌短片、汽车广告与商业叙事',
+    title: '品牌短片',
+    enTitle: 'BRAND FILM',
+    description: '品牌叙事与情绪化商业影像',
+    cover: works[0].cover,
+  },
+  {
+    id: 'automotive',
+    title: '汽车广告',
+    enTitle: 'AUTOMOTIVE',
+    description: '速度、机械与自然之间的张力',
     cover: works[2].cover,
   },
   {
     id: 'culture',
-    title: '音乐与时装',
-    enTitle: 'MUSIC / FASHION',
-    description: '现场节奏、时装影像与视觉实验',
+    title: '音乐现场',
+    enTitle: 'MUSIC / LIVE',
+    description: '现场节奏、呼吸与声音设计',
     cover: works[1].cover,
   },
   {
+    id: 'fashion',
+    title: '时装影像',
+    enTitle: 'FASHION FILM',
+    description: '织物、身体与城市空间的视觉实验',
+    cover: works[3].cover,
+  },
+  {
     id: 'portrait',
-    title: '人物与空间',
-    enTitle: 'PORTRAIT / SPACE',
-    description: '人物纪录、空间观察与安静叙事',
+    title: '人物纪录',
+    enTitle: 'PORTRAIT / DOC',
+    description: '人物观察与安静、真实的叙事',
     cover: works[4].cover,
+  },
+  {
+    id: 'space',
+    title: '空间影像',
+    enTitle: 'SPACE / ARCHIVE',
+    description: '光线、结构与人的尺度变化',
+    cover: works[5].cover,
   },
 ];
 
@@ -225,6 +246,11 @@ export default function App() {
   const visibleWorks = selectedCategory
     ? works.filter((work) => work.category === selectedCategory)
     : [];
+  const categoryDensity = categories.length > 6
+    ? 'compact'
+    : categories.length > 3
+      ? 'dense'
+      : 'standard';
 
   const navigate = useCallback((category: CategoryId | null, panel: InfoPanel | null) => {
     const params = new URLSearchParams(window.location.search);
@@ -316,7 +342,7 @@ export default function App() {
             <button type="button" onClick={() => navigate(null, 'contact')}>联系</button>
           </nav>
         </header>
-        <div className="category-grid" aria-label="作品分类">
+        <div className="category-grid" data-density={categoryDensity} aria-label="作品分类">
           {categories.map((category, index) => (
             <button
               className="category-panel"
