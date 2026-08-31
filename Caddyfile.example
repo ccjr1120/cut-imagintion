@@ -1,0 +1,9 @@
+# Copy this file to /etc/caddy/Caddyfile on the server.
+imagintion.gleeze.com {
+    root * /var/www/gu-mengxue
+    encode gzip
+
+    # Vite's client-side app handles query parameters and fallback routes.
+    try_files {path} /index.html
+    file_server
+}
