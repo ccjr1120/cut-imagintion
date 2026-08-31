@@ -1,7 +1,11 @@
-import { ArrowDown, ArrowUpRight } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { ArrowLeft, ArrowUpRight, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
+type CategoryId = 'commercial' | 'culture' | 'portrait';
+type InfoPanel = 'about' | 'contact';
 
 type Work = {
+  category: CategoryId;
   title: string;
   enTitle: string;
   type: string;
@@ -17,6 +21,7 @@ type Work = {
 
 const works: Work[] = [
   {
+    category: 'commercial',
     title: '夜航',
     enTitle: 'NIGHT FLIGHT',
     type: '品牌短片',
@@ -34,6 +39,7 @@ const works: Work[] = [
     ],
   },
   {
+    category: 'culture',
     title: '回声现场',
     enTitle: 'ECHOES LIVE',
     type: '音乐现场',
@@ -51,6 +57,7 @@ const works: Work[] = [
     ],
   },
   {
+    category: 'commercial',
     title: '公路以北',
     enTitle: 'NORTHBOUND',
     type: '汽车广告',
@@ -68,6 +75,7 @@ const works: Work[] = [
     ],
   },
   {
+    category: 'culture',
     title: '她的第二层皮肤',
     enTitle: 'SECOND SKIN',
     type: '时装影像',
@@ -85,6 +93,7 @@ const works: Work[] = [
     ],
   },
   {
+    category: 'portrait',
     title: '潮汐之间',
     enTitle: 'BETWEEN TIDES',
     type: '人物纪录片',
@@ -102,6 +111,7 @@ const works: Work[] = [
     ],
   },
   {
+    category: 'portrait',
     title: '留白',
     enTitle: 'ROOM TO BREATHE',
     type: '空间短片',
@@ -120,13 +130,51 @@ const works: Work[] = [
   },
 ];
 
-const workPageCount = works.length;
+const categories: Array<{
+  id: CategoryId;
+  title: string;
+  enTitle: string;
+  description: string;
+  cover: string;
+}> = [
+  {
+    id: 'commercial',
+    title: '品牌与商业',
+    enTitle: 'BRAND / COMMERCIAL',
+    description: '品牌短片、汽车广告与商业叙事',
+    cover: works[2].cover,
+  },
+  {
+    id: 'culture',
+    title: '音乐与时装',
+    enTitle: 'MUSIC / FASHION',
+    description: '现场节奏、时装影像与视觉实验',
+    cover: works[1].cover,
+  },
+  {
+    id: 'portrait',
+    title: '人物与空间',
+    enTitle: 'PORTRAIT / SPACE',
+    description: '人物纪录、空间观察与安静叙事',
+    cover: works[4].cover,
+  },
+];
 
-function WorkItem({ work, index, total }: { work: Work; index: number; total: number }) {
+function readCategoryParam(): CategoryId | null {
+  const value = new URLSearchParams(window.location.search).get('category');
+  return categories.some((category) => category.id === value) ? value as CategoryId : null;
+}
+
+function readPanelParam(): InfoPanel | null {
+  const value = new URLSearchParams(window.location.search).get('panel');
+  return value === 'about' || value === 'contact' ? value : null;
+}
+
+function WorkItem({ work, index, total, variant }: { work: Work; index: number; total: number; variant: number }) {
   return (
     <article
-      className={`work-page reveal-variant-${index + 1}`}
-      aria-labelledby={`work-title-${index}`}
+      className={`work-page reveal-variant-${variant + 1}`}
+      aria-labelledby={`work-title-${variant}`}
     >
       <div className="work-feature">
         <div className="work-video" data-reveal>
@@ -143,7 +191,7 @@ function WorkItem({ work, index, total }: { work: Work; index: number; total: nu
           <p className="work-number" data-reveal>{String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}</p>
           <div className="work-summary" data-reveal>
             <p>{work.type} · {work.year}</p>
-            <h3 id={`work-title-${index}`}>{work.title}</h3>
+            <h3 id={`work-title-${variant}`}>{work.title}</h3>
             <p className="work-en-title">{work.enTitle}</p>
             <p className="work-description">{work.description}</p>
           </div>
@@ -171,34 +219,52 @@ function WorkItem({ work, index, total }: { work: Work; index: number; total: nu
 }
 
 export default function App() {
-  const heroImageRef = useRef<HTMLDivElement>(null);
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId | null>(readCategoryParam);
+  const [activePanel, setActivePanel] = useState<InfoPanel | null>(readPanelParam);
+  const activeCategory = categories.find((category) => category.id === selectedCategory);
+  const visibleWorks = selectedCategory
+    ? works.filter((work) => work.category === selectedCategory)
+    : [];
+
+  const navigate = useCallback((category: CategoryId | null, panel: InfoPanel | null) => {
+    const params = new URLSearchParams(window.location.search);
+    params.delete('category');
+    params.delete('panel');
+
+    if (category) params.set('category', category);
+    if (panel) params.set('panel', panel);
+
+    const search = params.toString();
+    const nextUrl = `${window.location.pathname}${search ? `?${search}` : ''}`;
+    window.history.pushState({}, '', nextUrl);
+    setSelectedCategory(category);
+    setActivePanel(panel);
+  }, []);
 
   useEffect(() => {
-    const heroImage = heroImageRef.current;
-    if (!heroImage) return;
-
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let animationFrame = 0;
-
-    const renderParallax = () => {
-      animationFrame = 0;
-      const heroShift = reducedMotion.matches ? 0 : Math.min(window.scrollY * 0.16, 120);
-      heroImage.style.setProperty('--hero-shift', `${heroShift}px`);
-    };
-    const requestRender = () => {
-      if (!animationFrame) animationFrame = window.requestAnimationFrame(renderParallax);
+    const syncViewFromUrl = () => {
+      setSelectedCategory(readCategoryParam());
+      setActivePanel(readPanelParam());
     };
 
-    window.addEventListener('scroll', requestRender, { passive: true });
-    reducedMotion.addEventListener('change', requestRender);
-    requestRender();
-
-    return () => {
-      if (animationFrame) window.cancelAnimationFrame(animationFrame);
-      window.removeEventListener('scroll', requestRender);
-      reducedMotion.removeEventListener('change', requestRender);
-    };
+    window.addEventListener('popstate', syncViewFromUrl);
+    return () => window.removeEventListener('popstate', syncViewFromUrl);
   }, []);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    if (!activePanel) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') navigate(null, null);
+    };
+
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [activePanel, navigate]);
 
   useEffect(() => {
     const revealElements = document.querySelectorAll<HTMLElement>('[data-reveal]');
@@ -237,84 +303,138 @@ export default function App() {
       observer.disconnect();
       playbackObserver.disconnect();
     };
-  }, []);
+  }, [selectedCategory]);
+
+  if (!activeCategory) {
+    return (
+      <main className="category-gateway">
+        <header className="gateway-header">
+          <p className="gateway-name"><span>古梦雪</span><small>GU MENGXUE</small></p>
+          <p>VIDEO EDITOR / SHANGHAI</p>
+          <nav className="gateway-nav" aria-label="个人信息">
+            <button type="button" onClick={() => navigate(null, 'about')}>关于</button>
+            <button type="button" onClick={() => navigate(null, 'contact')}>联系</button>
+          </nav>
+        </header>
+        <div className="category-grid" aria-label="作品分类">
+          {categories.map((category, index) => (
+            <button
+              className="category-panel"
+              type="button"
+              key={category.id}
+              onClick={() => navigate(category.id, null)}
+              aria-label={`查看${category.title}作品`}
+            >
+              <img src={category.cover} alt="" aria-hidden="true" />
+              <span className="category-shade" aria-hidden="true" />
+              <span className="category-index">0{index + 1}</span>
+              <span className="category-copy">
+                <span className="category-en">{category.enTitle}</span>
+                <strong>{category.title}</strong>
+                <span className="category-description">{category.description}</span>
+              </span>
+              <ArrowUpRight className="category-arrow" aria-hidden="true" />
+            </button>
+          ))}
+        </div>
+        {activePanel && (
+          <div className="gateway-info-overlay">
+            <button
+              className="gateway-info-backdrop"
+              type="button"
+              onClick={() => navigate(null, null)}
+              aria-label="关闭信息面板"
+            />
+            <aside
+              className="gateway-info-panel"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={`${activePanel}-panel-title`}
+            >
+              <button
+                className="gateway-info-close"
+                type="button"
+                onClick={() => navigate(null, null)}
+                aria-label="关闭"
+                title="关闭"
+                autoFocus
+              >
+                <X aria-hidden="true" />
+              </button>
+
+              {activePanel === 'about' ? (
+                <div className="gateway-info-content">
+                  <p className="gateway-info-index">01 / PROFILE</p>
+                  <h2 id="about-panel-title">剪辑不只是连接镜头，而是在时间里安排情绪。</h2>
+                  <div className="gateway-info-copy">
+                    <p>我是古梦雪，一名独立视频剪辑师。过去 7 年里，我参与了品牌短片、人物纪录片、音乐影像与数字内容的后期制作。</p>
+                    <p>我关心画面之间的呼吸、声音留下的空间，以及一个故事如何在恰当的时刻被看见。</p>
+                  </div>
+                  <dl className="gateway-info-facts">
+                    <div><dt>服务</dt><dd>剪辑 / 调色 / 声音设计 / 动态设计</dd></div>
+                    <div><dt>工作地</dt><dd>上海 / 可远程合作</dd></div>
+                    <div><dt>语言</dt><dd>中文 / ENGLISH</dd></div>
+                  </dl>
+                </div>
+              ) : (
+                <div className="gateway-info-content gateway-contact-content">
+                  <p className="gateway-info-index">02 / CONTACT</p>
+                  <h2 id="contact-panel-title">有一个故事准备开剪？</h2>
+                  <a className="gateway-contact-mail" href="mailto:hello@gumengxue.studio">
+                    HELLO@GUMENGXUE.STUDIO <ArrowUpRight aria-hidden="true" />
+                  </a>
+                  <div className="gateway-contact-meta">
+                    <p className="availability"><span /> 2026 档期开放</p>
+                    <div><a href="#">VIMEO</a><a href="#">INSTAGRAM</a><a href="#">小红书</a></div>
+                  </div>
+                </div>
+              )}
+            </aside>
+          </div>
+        )}
+      </main>
+    );
+  }
 
   return (
-    <main>
-      <section className="hero" aria-labelledby="hero-title">
-        <div className="hero-image" ref={heroImageRef} aria-hidden="true" />
-        <div className="hero-shade" aria-hidden="true" />
-
-        <header className="site-header">
-          <a className="wordmark" href="#top" aria-label="古梦雪首页">GM<span>®</span></a>
-          <nav aria-label="主导航">
-            <a href="#work">作品</a>
-            <a href="#about">关于</a>
-            <a href="#contact">联系</a>
-          </nav>
-          <p className="availability"><span /> 2026 档期开放</p>
-        </header>
-
-        <div className="hero-copy" id="top">
-          <p className="eyebrow">Video editor / Shanghai</p>
-          <h1 id="hero-title">古梦雪<br />GU MENGXUE</h1>
-          <div className="hero-meta">
-            <p>用节奏、声音与画面<br />剪出值得被记住的瞬间。</p>
-            <a href="#work">浏览作品 <ArrowDown size={16} aria-hidden="true" /></a>
-          </div>
+    <main className="portfolio-shell">
+      <header className="work-site-header">
+        <div className="work-header-brand">
+          <button
+            className="category-back"
+            type="button"
+            onClick={() => navigate(null, null)}
+            aria-label="返回作品分类"
+            title="返回作品分类"
+          >
+            <ArrowLeft size={17} aria-hidden="true" />
+          </button>
+          <button className="wordmark" type="button" onClick={() => navigate(null, null)} aria-label="返回古梦雪首页">
+            GM<span>®</span>
+          </button>
         </div>
-
-        <div className="timecode" aria-hidden="true">
-          <span>● REC</span>
-          <span>00:01:24:18</span>
-          <span>4K / 25FPS</span>
-        </div>
-      </section>
+        <p>{activeCategory.title} / {activeCategory.enTitle}</p>
+        <p>{String(visibleWorks.length).padStart(2, '0')} PROJECTS</p>
+      </header>
 
       <section className="works-section" id="work" aria-labelledby="work-title">
         <header className="section-header" data-reveal>
-          <p className="section-index">01 / SELECTED WORK</p>
-          <h2 id="work-title">精选作品</h2>
-          <p>商业广告、纪录片、音乐现场与时装影像。<br />以下内容均为演示用虚构项目。</p>
+          <p className="section-index">01 / {activeCategory.enTitle}</p>
+          <h2 id="work-title">{activeCategory.title}</h2>
+          <p>{activeCategory.description}。<br />以下内容均为演示用虚构项目。</p>
         </header>
         <div className="works-list">
-          {works.map((work, index) => (
-            <WorkItem key={work.enTitle} work={work} index={index} total={workPageCount} />
+          {visibleWorks.map((work, index) => (
+            <WorkItem
+              key={work.enTitle}
+              work={work}
+              index={index}
+              total={visibleWorks.length}
+              variant={works.indexOf(work)}
+            />
           ))}
         </div>
       </section>
-
-      <section className="about-section" id="about" aria-labelledby="about-title">
-        <div className="about-label" data-reveal>
-          <p className="section-index">02 / PROFILE</p>
-          <p>BASED IN SHANGHAI<br />AVAILABLE WORLDWIDE</p>
-        </div>
-        <div className="about-copy" data-reveal>
-          <h2 id="about-title">剪辑不只是连接镜头，<br />而是在时间里安排情绪。</h2>
-          <div className="about-details">
-            <p>我是古梦雪，一名独立视频剪辑师。过去 7 年里，我参与了品牌短片、人物纪录片、音乐影像与数字内容的后期制作。</p>
-            <p>我关心画面之间的呼吸、声音留下的空间，以及一个故事如何在恰当的时刻被看见。</p>
-          </div>
-          <dl className="services">
-            <div><dt>服务</dt><dd>剪辑 / 调色 / 声音设计 / 动态设计</dd></div>
-            <div><dt>合作过</dt><dd>NIKE / SONY / NOWNESS / VOGUE</dd></div>
-            <div><dt>工作语言</dt><dd>中文 / ENGLISH</dd></div>
-          </dl>
-        </div>
-      </section>
-
-      <footer className="contact-section" id="contact">
-        <p className="section-index" data-reveal>03 / CONTACT</p>
-        <p className="contact-kicker" data-reveal>有一个故事准备开剪？</p>
-        <a className="contact-mail" href="mailto:hello@gumengxue.studio" data-reveal>
-          HELLO@GUMENGXUE.STUDIO <ArrowUpRight aria-hidden="true" />
-        </a>
-        <div className="footer-row" data-reveal>
-          <p>© 2026 GU MENGXUE</p>
-          <div><a href="#">VIMEO</a><a href="#">INSTAGRAM</a><a href="#">小红书</a></div>
-          <a href="#top">返回顶部 ↑</a>
-        </div>
-      </footer>
 
     </main>
   );
