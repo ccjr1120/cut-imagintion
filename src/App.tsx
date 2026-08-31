@@ -125,30 +125,29 @@ const workPageCount = works.length;
 function WorkItem({ work, index, total }: { work: Work; index: number; total: number }) {
   return (
     <article
-      className="work-page"
+      className={`work-page reveal-variant-${index + 1}`}
       aria-labelledby={`work-title-${index}`}
-      data-reveal
     >
       <div className="work-feature">
-        <div className="work-video">
+        <div className="work-video" data-reveal>
           <video
             src={work.video}
             poster={work.cover}
             controls
             playsInline
-            preload={index === 0 ? 'metadata' : 'none'}
+            preload="metadata"
             aria-label={`${work.title}作品视频`}
           />
         </div>
         <div className="work-info">
-          <p className="work-number">{String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}</p>
-          <div className="work-summary">
+          <p className="work-number" data-reveal>{String(index + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}</p>
+          <div className="work-summary" data-reveal>
             <p>{work.type} · {work.year}</p>
             <h3 id={`work-title-${index}`}>{work.title}</h3>
             <p className="work-en-title">{work.enTitle}</p>
             <p className="work-description">{work.description}</p>
           </div>
-          <dl className="work-facts">
+          <dl className="work-facts" data-reveal>
             <div><dt>客户</dt><dd>{work.client}</dd></div>
             <div><dt>职责</dt><dd>{work.role}</dd></div>
             <div><dt>片长</dt><dd>{work.duration}</dd></div>
@@ -157,7 +156,7 @@ function WorkItem({ work, index, total }: { work: Work; index: number; total: nu
       </div>
       <div className="work-stills" aria-label={`${work.title}项目截图`}>
         {work.screenshots.map((screenshot, screenshotIndex) => (
-          <figure key={screenshot}>
+          <figure key={screenshot} data-reveal>
             <img
               src={screenshot}
               alt={`${work.title}项目截图 ${screenshotIndex + 1}`}
@@ -203,11 +202,19 @@ export default function App() {
 
   useEffect(() => {
     const revealElements = document.querySelectorAll<HTMLElement>('[data-reveal]');
+    const workPages = document.querySelectorAll<HTMLElement>('.work-page');
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const playbackObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) (entry.target as HTMLElement).querySelector('video')?.pause();
+      });
+    });
+
+    workPages.forEach((workPage) => playbackObserver.observe(workPage));
 
     if (reducedMotion.matches) {
       revealElements.forEach((element) => element.classList.add('is-visible'));
-      return;
+      return () => playbackObserver.disconnect();
     }
 
     const observer = new IntersectionObserver(
@@ -216,19 +223,19 @@ export default function App() {
           const element = entry.target as HTMLElement;
           if (entry.isIntersecting) {
             element.classList.add('is-visible');
-            if (!element.classList.contains('work-page')) observer.unobserve(element);
-          } else if (element.classList.contains('work-page')) {
-            element.querySelector('video')?.pause();
+          } else {
+            element.classList.remove('is-visible');
           }
         });
       },
-      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
+      { threshold: 0.14, rootMargin: '0px 0px -6% 0px' },
     );
 
     revealElements.forEach((element) => observer.observe(element));
 
     return () => {
       observer.disconnect();
+      playbackObserver.disconnect();
     };
   }, []);
 
