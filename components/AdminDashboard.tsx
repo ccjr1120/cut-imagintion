@@ -21,7 +21,95 @@ async function responseJson(response: Response) {
   return body;
 }
 
-function MediaField({ label, value, accept, onChange, hint }: { label: string; value: string; accept: string; onChange: (value: string) => void; hint?: string }) {
+type UploadedMedia = { url: string };
+
+async function uploadMedia(file: File): Promise<UploadedMedia> {
+  const form = new FormData();
+  form.append('file', file);
+  return responseJson(await fetch('/api/admin/upload', { method: 'POST', body: form })) as Promise<UploadedMedia>;
+}
+
+async function createVideoPoster(file: File): Promise<File | null> {
+  const source = URL.createObjectURL(file);
+  const video = document.createElement('video');
+  video.preload = 'metadata';
+  video.muted = true;
+  video.playsInline = true;
+  video.src = source;
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      video.addEventListener('error', () => reject(new Error('无法读取视频画面')), { once: true });
+      // loadeddata guarantees that the video's first decoded frame is ready.
+      video.addEventListener('loadeddata', () => resolve(), { once: true });
+      video.load();
+    });
+
+    if (!video.videoWidth || !video.videoHeight) return null;
+    const maxWidth = 1600;
+    const scale = Math.min(1, maxWidth / video.videoWidth);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
+    canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.88));
+    return blob ? new File([blob], `${file.name}.jpg`, { type: 'image/jpeg' }) : null;
+  } finally {
+    URL.revokeObjectURL(source);
+    video.removeAttribute('src');
+    video.load();
+  }
+}
+
+async function createVideoScreenshots(file: File, count = 4): Promise<File[]> {
+  const source = URL.createObjectURL(file);
+  const video = document.createElement('video');
+  video.preload = 'metadata';
+  video.muted = true;
+  video.playsInline = true;
+  video.src = source;
+
+  try {
+    const duration = await new Promise<number>((resolve, reject) => {
+      video.addEventListener('error', () => reject(new Error('无法读取视频画面')), { once: true });
+      video.addEventListener('loadedmetadata', () => resolve(video.duration), { once: true });
+      video.load();
+    });
+    if (!Number.isFinite(duration) || duration <= 0 || !video.videoWidth || !video.videoHeight) return [];
+
+    const maxWidth = 1600;
+    const scale = Math.min(1, maxWidth / video.videoWidth);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
+    const screenshots: File[] = [];
+
+    for (let index = 0; index < count; index += 1) {
+      const time = Math.random() * duration;
+      await new Promise<void>((resolve, reject) => {
+        const onSeeked = () => { cleanup(); resolve(); };
+        const onError = () => { cleanup(); reject(new Error('无法读取视频画面')); };
+        const cleanup = () => {
+          video.removeEventListener('seeked', onSeeked);
+          video.removeEventListener('error', onError);
+        };
+        video.addEventListener('seeked', onSeeked, { once: true });
+        video.addEventListener('error', onError, { once: true });
+        video.currentTime = time;
+      });
+      canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.88));
+      if (blob) screenshots.push(new File([blob], `${file.name}-still-${index + 1}.jpg`, { type: 'image/jpeg' }));
+    }
+    return screenshots;
+  } finally {
+    URL.revokeObjectURL(source);
+    video.removeAttribute('src');
+    video.load();
+  }
+}
+
+function MediaField({ label, value, accept, onChange, hint, onVideoPoster, onVideoScreenshots }: { label: string; value: string; accept: string; onChange: (value: string) => void; hint?: string; onVideoPoster?: (value: string) => void; onVideoScreenshots?: (values: string[]) => void }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
@@ -30,11 +118,25 @@ function MediaField({ label, value, accept, onChange, hint }: { label: string; v
     setUploading(true);
     setError('');
     try {
-      const form = new FormData();
-      form.append('file', file);
-      const response = await fetch('/api/admin/upload', { method: 'POST', body: form });
-      const result = await responseJson(response) as { url: string };
+      const result = await uploadMedia(file);
       onChange(result.url);
+      if (file.type.startsWith('video/') && onVideoPoster) {
+        try {
+          const poster = await createVideoPoster(file);
+          if (poster) onVideoPoster((await uploadMedia(poster)).url);
+        } catch {
+          setError('视频已上传，但自动封面生成失败，请手动上传封面');
+        }
+      }
+      if (file.type.startsWith('video/') && onVideoScreenshots) {
+        try {
+          const screenshots = await createVideoScreenshots(file);
+          const uploaded = await Promise.all(screenshots.map((screenshot) => uploadMedia(screenshot)));
+          if (uploaded.length) onVideoScreenshots(uploaded.map((item) => item.url));
+        } catch {
+          setError('视频已上传，但自动截图生成失败，请手动添加截图');
+        }
+      }
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : '上传失败');
     } finally {
@@ -190,20 +292,20 @@ export function AdminDashboard() {
     }
   }
 
-  function removeItem() {
+  async function removeItem() {
     if (!content) return;
     if (section === 'categories') {
       if (!selectedCategory) return;
       if (projectCounts[selectedCategory.id]) { setNotice({ type: 'error', message: '这个分类下还有项目，请先移动或删除相关项目' }); return; }
       if (!window.confirm(`确定删除分类“${selectedCategory.title}”吗？`)) return;
       const categories = content.categories.filter((item) => item.id !== selectedCategory.id);
-      mutate((current) => ({ ...current, categories }));
-      setSelectedId(categories[0]?.id || '');
+      const saved = await saveContent({ ...content, categories }, '删除已保存');
+      if (saved) setSelectedId(saved.categories[0]?.id || '');
     } else {
       if (!selectedProject || !window.confirm(`确定删除项目“${selectedProject.title}”吗？`)) return;
       const projects = content.projects.filter((item) => item.id !== selectedProject.id);
-      mutate((current) => ({ ...current, projects }));
-      setSelectedId(projects[0]?.id || '');
+      const saved = await saveContent({ ...content, projects }, '删除已保存');
+      if (saved) setSelectedId(saved.projects[0]?.id || '');
     }
   }
 
@@ -218,20 +320,26 @@ export function AdminDashboard() {
     mutate((current) => ({ ...current, [key]: items } as PortfolioContent));
   }
 
-  async function save() {
-    if (!content) return;
+  async function saveContent(nextContent: PortfolioContent, successMessage = '内容已发布') {
     setSaving(true);
     setNotice(null);
     try {
-      const saved = await responseJson(await fetch('/api/admin/content', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(content) })) as PortfolioContent;
+      const saved = await responseJson(await fetch('/api/admin/content', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nextContent) })) as PortfolioContent;
       setContent(saved);
       setDirty(false);
-      setNotice({ type: 'ok', message: '内容已发布' });
+      setNotice({ type: 'ok', message: successMessage });
+      return saved;
     } catch (error) {
       setNotice({ type: 'error', message: error instanceof Error ? error.message : '保存失败' });
+      return null;
     } finally {
       setSaving(false);
     }
+  }
+
+  async function save() {
+    if (!content) return;
+    await saveContent(content);
   }
 
   async function logout() {
@@ -311,7 +419,7 @@ export function AdminDashboard() {
               <div className="form-section-heading"><span>03</span><div><h2>主媒体</h2><p>视频封面和完整视频，可上传或使用外链</p></div></div>
               <div className="media-fields-grid">
                 <MediaField label="视频封面" value={selectedProject.cover} accept="image/*" onChange={(cover) => updateProject({ cover })} hint="推荐 16:9 横图" />
-                <MediaField label="项目视频" value={selectedProject.video} accept="video/*" onChange={(video) => updateProject({ video })} hint="支持 MP4 / WebM / MOV，单文件不超过 250MB" />
+                <MediaField label="项目视频" value={selectedProject.video} accept="video/*" onChange={(video) => updateProject({ video })} onVideoPoster={(cover) => { if (!selectedProject.cover) updateProject({ cover }); }} onVideoScreenshots={(screenshots) => { if (!selectedProject.screenshots.length) updateProject({ screenshots }); }} hint="支持 MP4 / WebM / MOV，自动截取首帧封面和 4 张随机截图，均可手动替换" />
               </div>
               <div className="form-section-heading"><span>04</span><div><h2>项目截图</h2><p>可添加、删除和调整展示顺序，最多 12 张</p></div><button type="button" className="secondary-button" disabled={selectedProject.screenshots.length >= 12} onClick={() => updateProject({ screenshots: [...selectedProject.screenshots, ''] })}><Plus size={15} />添加截图</button></div>
               <div className="screenshot-fields">

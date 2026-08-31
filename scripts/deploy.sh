@@ -42,14 +42,36 @@ fi
 
 SSH_ARGS=(ssh -p "$DEPLOY_PORT" -o ConnectTimeout=15)
 if [[ -n "${DEPLOY_SSH_KEY:-}" ]]; then SSH_ARGS+=(-i "$DEPLOY_SSH_KEY"); fi
+# Keep the control socket private to this invocation. A fixed path can be
+# claimed by an abandoned master process and cause multiplexed sessions to be
+# refused even when a direct SSH connection works.
+SSH_CONTROL_PATH="/tmp/gmx-deploy-$$-%C"
+SSH_ARGS+=(
+  -o ControlMaster=auto
+  -o ControlPersist=120
+  -o ControlPath="$SSH_CONTROL_PATH"
+)
 TARGET="${DEPLOY_USER}@${DEPLOY_HOST}"
 
+cleanup_ssh() {
+  "${SSH_ARGS[@]}" -O exit "$TARGET" >/dev/null 2>&1 || true
+}
+trap cleanup_ssh EXIT
+
 run_ssh() {
-  if [[ -n "${DEPLOY_PASSWORD:-}" ]]; then
-    SSHPASS="$DEPLOY_PASSWORD" sshpass -e "${SSH_ARGS[@]}" "$@"
-  else
-    "${SSH_ARGS[@]}" "$@"
-  fi
+  local attempt=1 status
+  while (( attempt <= 4 )); do
+    if [[ -n "${DEPLOY_PASSWORD:-}" ]]; then
+      SSHPASS="$DEPLOY_PASSWORD" sshpass -e "${SSH_ARGS[@]}" "$@" && return 0
+    else
+      "${SSH_ARGS[@]}" "$@" && return 0
+    fi
+    status=$?
+    if (( status != 255 || attempt == 4 )); then return "$status"; fi
+    printf 'SSH connection interrupted; retrying (%s/4)...\n' "$((attempt + 1))" >&2
+    sleep "$((attempt * 2))"
+    attempt=$((attempt + 1))
+  done
 }
 
 run_sudo() {
@@ -82,12 +104,18 @@ mkdir -p .deploy/.next
 cp -R .next/static .deploy/.next/static
 cp -R public .deploy/public
 
+if ! run_ssh "$TARGET" "true"; then
+  printf 'Unable to establish an SSH connection to %s.\n' "$TARGET" >&2
+  exit 1
+fi
 if ! run_ssh "$TARGET" "command -v node >/dev/null 2>&1"; then
   printf 'Node.js 22+ is required on the server.\n' >&2
   exit 1
 fi
 run_ssh "$TARGET" "mkdir -p '$DEPLOY_PATH/app' '$DEPLOY_PATH/shared/media' '$DEPLOY_PATH/shared/data'"
-tar -C .deploy -czf - . | run_ssh "$TARGET" "find '$DEPLOY_PATH/app' -mindepth 1 -maxdepth 1 -exec rm -rf -- {} + && tar -xzf - -C '$DEPLOY_PATH/app'"
+# macOS tar otherwise stores Apple extended attributes that GNU tar on the
+# server does not understand (for example, LIBARCHIVE.xattr.com.apple.provenance).
+COPYFILE_DISABLE=1 tar -C .deploy -czf - . | run_ssh "$TARGET" "find '$DEPLOY_PATH/app' -mindepth 1 -maxdepth 1 -exec rm -rf -- {} + && tar -xzf - -C '$DEPLOY_PATH/app'"
 if ! run_ssh "$TARGET" "test -f '$DEPLOY_PATH/shared/data/portfolio.json'"; then
   run_ssh "$TARGET" "cat > '$DEPLOY_PATH/shared/data/portfolio.json'" < data/portfolio.json
 fi
