@@ -6,14 +6,16 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "next dev",
+    "build": "next build",
     "deploy": "bash scripts/deploy.sh",
-    "preview": "vite preview",
-    "lint": "eslint ."
+    "start": "next start",
+    "lint": "eslint app components lib --max-warnings=0",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "lucide-react": "^1.37.0",
+    "next": "^16.3.3",
     "react": "19.2.6",
     "react-dom": "19.2.6"
   },
@@ -22,14 +24,11 @@
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "@vitejs/plugin-react": "6.0.2",
     "eslint": "9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.4.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "^8.46.1",
-    "vite": "8.0.13"
+    "typescript-eslint": "^8.46.1"
   },
   "type": "module"
 }

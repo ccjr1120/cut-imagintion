@@ -20,6 +20,8 @@ button, a { color: inherit; font: inherit; }
 a { text-decoration: none; }
 button { border: 0; }
 
+.empty-projects { margin: 80px 0; color: #6b6963; font-size: 14px; }
+
 .category-gateway {
   position: fixed;
   z-index: 20;
@@ -816,7 +818,7 @@ nav a:hover::after { right: 0; }
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: repeat(3, minmax(0, 1fr));
   }
-  .category-panel {
+  .category-grid .category-panel {
     grid-column: auto;
     grid-row: auto;
     transform: none;

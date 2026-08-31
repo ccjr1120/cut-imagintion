@@ -1,39 +1,39 @@
 # cut-imagintion
 
-Gu Mengxue's video editor portfolio, built with React, TypeScript, and Vite.
+古梦雪的视频剪辑作品集与内容管理后台，基于 Next.js、React 和 TypeScript。
 
-## Development
+## 本地开发
 
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
-## Production build
+前台位于 `http://localhost:3000`，管理后台位于 `http://localhost:3000/admin`。开发环境未配置 `.env.local` 时，后台默认密码为 `admin`；生产环境必须配置 `ADMIN_PASSWORD` 与 `SESSION_SECRET`。
+
+## 内容与媒体
+
+- 初始内容保存在 `data/portfolio.json`。
+- 后台上传的图片和视频保存在 `storage/media`。
+- 生产环境可用 `PORTFOLIO_DATA_FILE` 和 `PORTFOLIO_MEDIA_DIR` 把内容放到独立持久化目录。
+- 后台支持分类与项目的新增、编辑、排序和删除；媒体既可直接上传，也可填写 `http(s)` 外链。
+
+## 检查与构建
 
 ```bash
+npm run lint
+npm run typecheck
 npm run build
 ```
 
-The production files are generated in `dist/`.
+## 部署
 
-## Deployment with Caddy
-
-The deploy script builds the site locally and uploads `dist/` to the server. Copy the environment template, fill in the SSH details, then run:
+服务器需安装 Node.js 22+、Caddy 和 systemd。复制部署配置并填写服务器地址、管理员密码和会话密钥：
 
 ```bash
 cp .env.deploy.example .env.deploy
 npm run deploy
 ```
 
-The deploy script automatically installs Caddy on Debian/Ubuntu when it is missing, adds the site block when `DEPLOY_DOMAIN` is not already configured, validates it, and reloads the service. Keep `DEPLOY_DOMAIN`, `DEPLOY_PATH`, and `DEPLOY_CADDY_CONFIG_PATH` aligned with the server. To configure Caddy manually, copy [Caddyfile.example](Caddyfile.example) to `/etc/caddy/Caddyfile`:
-
-```bash
-sudo apt install -y caddy
-sudo cp Caddyfile.example /etc/caddy/Caddyfile
-sudo caddy validate --config /etc/caddy/Caddyfile
-sudo systemctl enable --now caddy
-sudo systemctl reload caddy
-```
-
-Point the domain's DNS record to the server and allow ports `80` and `443`. Caddy will then obtain and renew HTTPS certificates automatically.
+部署脚本会上传 Next.js standalone 服务，创建/更新 systemd 服务，并配置 Caddy 反向代理。后台内容和上传文件保存在 `$DEPLOY_PATH/shared`，后续部署不会覆盖。

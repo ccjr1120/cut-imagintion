@@ -38,3 +38,7 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+*.tsbuildinfo
+/.deploy/
+/storage/media/*
+!/storage/media/.gitkeep

@@ -1,0 +1,169 @@
+{
+  "categories": [
+    {
+      "id": "commercial",
+      "title": "品牌短片",
+      "enTitle": "BRAND FILM",
+      "description": "品牌叙事与情绪化商业影像",
+      "cover": "https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1800&q=86"
+    },
+    {
+      "id": "automotive",
+      "title": "汽车广告",
+      "enTitle": "AUTOMOTIVE",
+      "description": "速度、机械与自然之间的张力",
+      "cover": "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1500&q=86"
+    },
+    {
+      "id": "culture",
+      "title": "音乐现场",
+      "enTitle": "MUSIC / LIVE",
+      "description": "现场节奏、呼吸与声音设计",
+      "cover": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1500&q=86"
+    },
+    {
+      "id": "fashion",
+      "title": "时装影像",
+      "enTitle": "FASHION FILM",
+      "description": "织物、身体与城市空间的视觉实验",
+      "cover": "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1500&q=86"
+    },
+    {
+      "id": "portrait",
+      "title": "人物纪录",
+      "enTitle": "PORTRAIT / DOC",
+      "description": "人物观察与安静、真实的叙事",
+      "cover": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=86"
+    },
+    {
+      "id": "space",
+      "title": "空间影像",
+      "enTitle": "SPACE / ARCHIVE",
+      "description": "光线、结构与人的尺度变化",
+      "cover": "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=1500&q=86"
+    }
+  ],
+  "projects": [
+    {
+      "id": "night-flight",
+      "categoryId": "commercial",
+      "title": "夜航",
+      "enTitle": "NIGHT FLIGHT",
+      "type": "品牌短片",
+      "year": "2025",
+      "duration": "01:42",
+      "description": "一次从暮色驶向凌晨的城市漫游。以密集的环境声、霓虹反射和呼吸感剪辑，重新描绘熟悉的夜。",
+      "role": "剪辑 / 调色",
+      "software": "Adobe Premiere Pro / DaVinci Resolve",
+      "plugins": "FilmConvert Nitrate / Dehancer",
+      "cover": "https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1800&q=86",
+      "video": "https://videos.pexels.com/video-files/3130284/3130284-hd_1920_1080_30fps.mp4",
+      "screenshots": [
+        "https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1000&q=82",
+        "https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=1000&q=82",
+        "https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=1000&q=82"
+      ]
+    },
+    {
+      "id": "echoes-live",
+      "categoryId": "culture",
+      "title": "回声现场",
+      "enTitle": "ECHOES LIVE",
+      "type": "音乐现场",
+      "year": "2025",
+      "duration": "03:18",
+      "description": "记录一场只发生一次的地下演出。剪辑跟随鼓点推进，同时保留观众、呼吸与现场噪音的粗粝质感。",
+      "role": "剪辑 / 声音设计",
+      "software": "Adobe Premiere Pro / Adobe Audition",
+      "plugins": "Red Giant Universe / iZotope RX",
+      "cover": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1500&q=86",
+      "video": "https://videos.pexels.com/video-files/4990245/4990245-hd_1920_1080_30fps.mp4",
+      "screenshots": [
+        "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1000&q=82",
+        "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1000&q=82",
+        "https://images.unsplash.com/photo-1501612780327-45045538702b?auto=format&fit=crop&w=1000&q=82"
+      ]
+    },
+    {
+      "id": "northbound",
+      "categoryId": "automotive",
+      "title": "公路以北",
+      "enTitle": "NORTHBOUND",
+      "type": "汽车广告",
+      "year": "2024",
+      "duration": "00:45",
+      "description": "速度之外，寻找一段更安静的旅程。用长镜头与瞬时切点对照，建立机械和自然之间的张力。",
+      "role": "剪辑 / 动态设计",
+      "software": "Adobe Premiere Pro / After Effects",
+      "plugins": "Red Giant Universe / Motion Bro",
+      "cover": "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1500&q=86",
+      "video": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+      "screenshots": [
+        "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1000&q=82",
+        "https://images.unsplash.com/photo-1471479917193-f00955256257?auto=format&fit=crop&w=1000&q=82",
+        "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=1000&q=82"
+      ]
+    },
+    {
+      "id": "second-skin",
+      "categoryId": "fashion",
+      "title": "她的第二层皮肤",
+      "enTitle": "SECOND SKIN",
+      "type": "时装影像",
+      "year": "2024",
+      "duration": "01:06",
+      "description": "围绕身体、织物和城市空间展开的时装实验。跳切与静帧共同构成一种不断变化的观看距离。",
+      "role": "剪辑 / 视觉概念",
+      "software": "DaVinci Resolve / After Effects",
+      "plugins": "Boris FX Sapphire / FilmConvert",
+      "cover": "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1500&q=86",
+      "video": "https://videos.pexels.com/video-files/4990245/4990245-hd_1920_1080_30fps.mp4",
+      "screenshots": [
+        "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1000&q=82",
+        "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1000&q=82",
+        "https://images.unsplash.com/photo-1496217590455-aa63a8350eea?auto=format&fit=crop&w=1000&q=82"
+      ]
+    },
+    {
+      "id": "between-tides",
+      "categoryId": "portrait",
+      "title": "潮汐之间",
+      "enTitle": "BETWEEN TIDES",
+      "type": "人物纪录片",
+      "year": "2023",
+      "duration": "08:24",
+      "description": "一位海边手艺人的日常切片。影片让潮汐成为自然的时间线，在重复劳动里留下细微变化。",
+      "role": "剪辑 / 联合编剧",
+      "software": "Avid Media Composer / DaVinci Resolve",
+      "plugins": "iZotope RX / Neat Video",
+      "cover": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1800&q=86",
+      "video": "https://videos.pexels.com/video-files/3130284/3130284-hd_1920_1080_30fps.mp4",
+      "screenshots": [
+        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1000&q=82",
+        "https://images.unsplash.com/photo-1476673160081-cf065607f449?auto=format&fit=crop&w=1000&q=82",
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=82"
+      ]
+    },
+    {
+      "id": "room-to-breathe",
+      "categoryId": "space",
+      "title": "留白",
+      "enTitle": "ROOM TO BREATHE",
+      "type": "空间短片",
+      "year": "2023",
+      "duration": "01:30",
+      "description": "从光线、结构与人的尺度出发，用极简的节奏呈现一处空间如何随一天的时间缓慢变化。",
+      "role": "剪辑 / 声音设计",
+      "software": "Final Cut Pro / DaVinci Resolve",
+      "plugins": "mFilmLook / Neat Video",
+      "cover": "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=1500&q=86",
+      "video": "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+      "screenshots": [
+        "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=1000&q=82",
+        "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1000&q=82",
+        "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1000&q=82"
+      ]
+    }
+  ],
+  "updatedAt": "2026-08-31T14:19:43.370Z"
+}
