@@ -126,9 +126,11 @@ export function Portfolio({ content }: { content: PortfolioContent }) {
           </nav>
         </header>
         <div className="category-grid" data-density={density} aria-label="作品分类">
-          {content.categories.map((category, index) => (
+          {content.categories.map((category, index) => {
+            const cover = category.cover || content.projects.find((project) => project.categoryId === category.id)?.cover || '';
+            return (
             <button className="category-panel" type="button" key={category.id} onClick={() => navigate(category.id, null)} aria-label={`查看${category.title}作品`}>
-              <img src={category.cover} alt="" aria-hidden="true" />
+              <img src={cover} alt="" aria-hidden="true" />
               <span className="category-shade" aria-hidden="true" />
               <span className="category-index">{String(index + 1).padStart(2, '0')}</span>
               <span className="category-copy">
@@ -138,7 +140,8 @@ export function Portfolio({ content }: { content: PortfolioContent }) {
               </span>
               <ArrowUpRight className="category-arrow" aria-hidden="true" />
             </button>
-          ))}
+            );
+          })}
         </div>
         {activePanel && (
           <div className="gateway-info-overlay">
