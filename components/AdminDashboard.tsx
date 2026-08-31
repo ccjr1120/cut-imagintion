@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDown, ArrowLeft, ArrowUp, Check, ChevronRight, ExternalLink, FolderKanban, Image as ImageIcon, LoaderCircle, LogOut, Plus, Save, Trash2, Upload, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowUp, Check, ChevronRight, ExternalLink, FolderKanban, Image as ImageIcon, LoaderCircle, LogOut, Plus, RefreshCw, Save, Trash2, Upload, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Category, PortfolioContent, Project } from '@/lib/types';
 
@@ -107,6 +107,80 @@ async function createVideoScreenshots(file: File, count = 4): Promise<File[]> {
     video.removeAttribute('src');
     video.load();
   }
+}
+
+async function createPosterFromVideoUrl(url: string): Promise<File> {
+  const video = document.createElement('video');
+  video.preload = 'metadata';
+  video.muted = true;
+  video.playsInline = true;
+  video.crossOrigin = 'anonymous';
+  video.src = url;
+
+  try {
+    const duration = await new Promise<number>((resolve, reject) => {
+      video.addEventListener('error', () => reject(new Error('无法读取视频，请检查视频地址或跨域设置')), { once: true });
+      video.addEventListener('loadedmetadata', () => resolve(video.duration), { once: true });
+      video.load();
+    });
+    if (!Number.isFinite(duration) || duration <= 0 || !video.videoWidth || !video.videoHeight) {
+      throw new Error('无法读取视频时长或画面尺寸');
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      const onSeeked = () => { cleanup(); resolve(); };
+      const onError = () => { cleanup(); reject(new Error('无法定位到视频中间画面')); };
+      const cleanup = () => {
+        video.removeEventListener('seeked', onSeeked);
+        video.removeEventListener('error', onError);
+      };
+      video.addEventListener('seeked', onSeeked, { once: true });
+      video.addEventListener('error', onError, { once: true });
+      video.currentTime = duration / 2;
+    });
+
+    const maxWidth = 1600;
+    const scale = Math.min(1, maxWidth / video.videoWidth);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(video.videoWidth * scale);
+    canvas.height = Math.round(video.videoHeight * scale);
+    canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.88));
+    if (!blob) throw new Error('封面生成失败');
+    return new File([blob], 'video-middle-frame.jpg', { type: 'image/jpeg' });
+  } finally {
+    video.removeAttribute('src');
+    video.load();
+  }
+}
+
+function GeneratePosterButton({ videoUrl, onGenerated }: { videoUrl: string; onGenerated: (value: string) => void }) {
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState('');
+
+  async function generate() {
+    if (!videoUrl || generating) return;
+    setGenerating(true);
+    setError('');
+    try {
+      const poster = await createPosterFromVideoUrl(videoUrl);
+      onGenerated((await uploadMedia(poster)).url);
+    } catch (generationError) {
+      setError(generationError instanceof Error ? generationError.message : '封面生成失败，请手动上传封面');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  return (
+    <div className="poster-generator">
+      <button type="button" className="secondary-button" disabled={!videoUrl || generating} onClick={() => void generate()}>
+        {generating ? <LoaderCircle className="spin" size={15} /> : <RefreshCw size={15} />}
+        {generating ? '生成中' : '重新生成封面'}
+      </button>
+      {error && <small className="field-error">{error}</small>}
+    </div>
+  );
 }
 
 function MediaField({ label, value, accept, onChange, hint, onVideoPoster, onVideoScreenshots }: { label: string; value: string; accept: string; onChange: (value: string) => void; hint?: string; onVideoPoster?: (value: string) => void; onVideoScreenshots?: (values: string[]) => void }) {
@@ -420,6 +494,7 @@ export function AdminDashboard() {
               <div className="media-fields-grid">
                 <MediaField label="视频封面" value={selectedProject.cover} accept="image/*" onChange={(cover) => updateProject({ cover })} hint="推荐 16:9 横图" />
                 <MediaField label="项目视频" value={selectedProject.video} accept="video/*" onChange={(video) => updateProject({ video })} onVideoPoster={(cover) => { if (!selectedProject.cover) updateProject({ cover }); }} onVideoScreenshots={(screenshots) => { if (!selectedProject.screenshots.length) updateProject({ screenshots }); }} hint="支持 MP4 / WebM / MOV，自动截取首帧封面和 4 张随机截图，均可手动替换" />
+                <GeneratePosterButton videoUrl={selectedProject.video} onGenerated={(cover) => updateProject({ cover })} />
               </div>
               <div className="form-section-heading"><span>04</span><div><h2>项目截图</h2><p>可添加、删除和调整展示顺序，最多 12 张</p></div><button type="button" className="secondary-button" disabled={selectedProject.screenshots.length >= 12} onClick={() => updateProject({ screenshots: [...selectedProject.screenshots, ''] })}><Plus size={15} />添加截图</button></div>
               <div className="screenshot-fields">
