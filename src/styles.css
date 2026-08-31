@@ -134,25 +134,13 @@ nav a:hover::after { right: 0; }
 }
 .timecode span:first-child { color: var(--signal); }
 
-.works-section { padding: 0; }
-.horizontal-stage {
-  --progress-scale: .1667;
-}
-.horizontal-sticky {
-  position: relative;
-  display: flex;
-  height: 100svh;
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--paper);
-}
+.works-section { padding: 0 0 120px; }
 .section-header {
   display: grid;
   grid-template-columns: .7fr 1fr 1fr;
   align-items: start;
-  flex: none;
   margin: 0;
-  padding: 38px 3.5vw 26px;
+  padding: 64px 3.5vw 40px;
   border-bottom: 1px solid var(--line);
 }
 .section-header h2 {
@@ -167,28 +155,19 @@ nav a:hover::after { right: 0; }
   font-size: 14px;
   line-height: 1.7;
 }
-.horizontal-viewport {
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-.horizontal-viewport .swiper-wrapper,
-.horizontal-viewport .swiper-slide {
-  height: 100%;
-}
+.works-list { padding: 0 3.5vw; }
 .work-page {
   display: flex;
   width: 100%;
-  height: 100%;
-  flex: none;
   flex-direction: column;
-  gap: 22px;
-  padding: 26px 3.5vw 18px;
+  gap: 24px;
+  padding: 56px 0 72px;
+  border-bottom: 1px solid var(--line);
 }
+.work-page:last-child { padding-bottom: 0; border-bottom: 0; }
 .work-feature {
   display: grid;
-  min-height: 0;
-  flex: 1;
+  height: clamp(500px, 62svh, 680px);
   grid-template-columns: minmax(0, 1.55fr) minmax(280px, .55fr);
   gap: 3vw;
   align-items: stretch;
@@ -250,8 +229,7 @@ nav a:hover::after { right: 0; }
 .work-facts dd { margin: 0; text-align: right; }
 .work-stills {
   display: grid;
-  height: clamp(105px, 15svh, 150px);
-  flex: none;
+  height: clamp(140px, 18svh, 190px);
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
 }
@@ -278,26 +256,26 @@ nav a:hover::after { right: 0; }
   background: rgba(0, 0, 0, .66);
   color: white;
 }
-.work-progress {
-  display: grid;
-  grid-template-columns: 34px minmax(80px, 220px) 34px;
-  align-items: center;
-  gap: 12px;
-  flex: none;
-  justify-content: end;
-  padding: 0 3.5vw 22px;
-  font: 10px var(--font-geist-mono), monospace;
+
+[data-reveal] {
+  opacity: 0;
+  transform: translate3d(0, 26px, 0);
+  transition: opacity .65s ease, transform .75s cubic-bezier(.22, .75, .2, 1);
 }
-.work-progress > span:last-child { text-align: right; }
-.progress-line { height: 1px; overflow: hidden; background: rgba(17, 17, 15, .2); }
-.progress-line i {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: var(--signal);
-  transform: scaleX(var(--progress-scale));
-  transform-origin: left;
+[data-reveal].is-visible { opacity: 1; transform: none; }
+.work-page[data-reveal] { opacity: 1; transform: none; transition: none; }
+.work-page[data-reveal] .work-video,
+.work-page[data-reveal] .work-info,
+.work-page[data-reveal] .work-stills {
+  opacity: 0;
+  transform: translate3d(0, 32px, 0);
+  transition: opacity .7s ease, transform .8s cubic-bezier(.22, .75, .2, 1);
 }
+.work-page[data-reveal].is-visible .work-video,
+.work-page[data-reveal].is-visible .work-info,
+.work-page[data-reveal].is-visible .work-stills { opacity: 1; transform: none; }
+.work-page[data-reveal] .work-info { transition-delay: .08s; }
+.work-page[data-reveal] .work-stills { transition-delay: .16s; }
 
 .about-section {
   display: grid;
@@ -371,38 +349,32 @@ nav a:hover::after { right: 0; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .hero-image { animation: none; }
+  [data-reveal],
+  .work-page[data-reveal] .work-video,
+  .work-page[data-reveal] .work-info,
+  .work-page[data-reveal] .work-stills { opacity: 1; transform: none; }
   * { transition-duration: .01ms !important; }
 }
 
 @media (max-width: 899px) {
   .works-section { padding: 64px 20px 100px; }
-  .horizontal-stage { height: auto; }
-  .horizontal-sticky { position: static; display: block; height: auto; overflow: visible; }
   .section-header { display: block; margin-bottom: 50px; padding: 0; border-bottom: 0; }
   .section-header h2 { margin: 18px 0 24px; font-size: 38px; }
   .section-header > p:last-child { justify-self: auto; }
-  .horizontal-viewport { overflow: visible; }
-  .horizontal-viewport .swiper-wrapper {
-    display: block;
-    width: auto;
-    height: auto;
-    transform: none !important;
-  }
-  .horizontal-viewport .swiper-slide { width: auto !important; height: auto; }
+  .works-list { padding: 0; }
   .work-page {
     display: block;
     width: auto;
     height: auto;
     margin-bottom: 76px;
     padding: 0 0 76px;
-    border-bottom: 1px solid var(--line);
   }
-  .work-feature { grid-template-columns: 1fr; gap: 26px; }
+  .work-page:last-child { margin-bottom: 0; padding-bottom: 0; }
+  .work-feature { height: auto; grid-template-columns: 1fr; gap: 26px; }
   .work-video { aspect-ratio: 16 / 9; }
   .work-info { min-height: 390px; padding: 0; }
   .work-summary h3 { font-size: 40px; }
   .work-stills { height: 150px; margin-top: 26px; }
-  .work-progress { display: none; }
 }
 
 @media (max-width: 700px) {

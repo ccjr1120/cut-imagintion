@@ -1,10 +1,5 @@
 import { ArrowDown, ArrowUpRight } from 'lucide-react';
-import type { CSSProperties } from 'react';
-import { useEffect, useRef, useState } from 'react';
-import type { Swiper as SwiperInstance } from 'swiper';
-import { Mousewheel } from 'swiper/modules';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
+import { useEffect, useRef } from 'react';
 
 type Work = {
   title: string;
@@ -127,11 +122,12 @@ const works: Work[] = [
 
 const workPageCount = works.length;
 
-function WorkSlide({ work, index, total }: { work: Work; index: number; total: number }) {
+function WorkItem({ work, index, total }: { work: Work; index: number; total: number }) {
   return (
     <article
       className="work-page"
       aria-labelledby={`work-title-${index}`}
+      data-reveal
     >
       <div className="work-feature">
         <div className="work-video">
@@ -176,10 +172,7 @@ function WorkSlide({ work, index, total }: { work: Work; index: number; total: n
 }
 
 export default function App() {
-  const [activeWorkPage, setActiveWorkPage] = useState(0);
-  const [workSwiper, setWorkSwiper] = useState<SwiperInstance | null>(null);
   const heroImageRef = useRef<HTMLDivElement>(null);
-  const horizontalStageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const heroImage = heroImageRef.current;
@@ -209,61 +202,35 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const stage = horizontalStageRef.current;
-    if (!stage || !workSwiper) return;
+    const revealElements = document.querySelectorAll<HTMLElement>('[data-reveal]');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-    const desktopQuery = window.matchMedia('(min-width: 900px)');
-    let animationFrame = 0;
-    let previousScrollY = window.scrollY;
-    let previousRect = stage.getBoundingClientRect();
+    if (reducedMotion.matches) {
+      revealElements.forEach((element) => element.classList.add('is-visible'));
+      return;
+    }
 
-    const updateMousewheel = () => {
-      animationFrame = 0;
-      const scrollY = window.scrollY;
-      const rect = stage.getBoundingClientRect();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const element = entry.target as HTMLElement;
+          if (entry.isIntersecting) {
+            element.classList.add('is-visible');
+            if (!element.classList.contains('work-page')) observer.unobserve(element);
+          } else if (element.classList.contains('work-page')) {
+            element.querySelector('video')?.pause();
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -8% 0px' },
+    );
 
-      if (!desktopQuery.matches) {
-        workSwiper.mousewheel.disable();
-      } else {
-        const enteringFromAbove = scrollY > previousScrollY
-          && previousRect.top > 0
-          && rect.top <= 0;
-        const enteringFromBelow = scrollY < previousScrollY
-          && previousRect.bottom < window.innerHeight
-          && rect.bottom >= window.innerHeight;
-
-        if (enteringFromAbove || enteringFromBelow) {
-          window.scrollTo({ top: scrollY + rect.top, behavior: 'auto' });
-          workSwiper.mousewheel.enable();
-        } else {
-          const isViewportAligned = Math.abs(rect.top) <= 1
-            && rect.bottom >= window.innerHeight - 1;
-          if (isViewportAligned) workSwiper.mousewheel.enable();
-          else workSwiper.mousewheel.disable();
-        }
-      }
-
-      previousScrollY = window.scrollY;
-      previousRect = stage.getBoundingClientRect();
-    };
-    const requestUpdate = () => {
-      if (!animationFrame) animationFrame = window.requestAnimationFrame(updateMousewheel);
-    };
-
-    workSwiper.mousewheel.disable();
-    window.addEventListener('scroll', requestUpdate, { passive: true });
-    window.addEventListener('resize', requestUpdate);
-    desktopQuery.addEventListener('change', requestUpdate);
-    requestUpdate();
+    revealElements.forEach((element) => observer.observe(element));
 
     return () => {
-      if (animationFrame) window.cancelAnimationFrame(animationFrame);
-      workSwiper.mousewheel.disable();
-      window.removeEventListener('scroll', requestUpdate);
-      window.removeEventListener('resize', requestUpdate);
-      desktopQuery.removeEventListener('change', requestUpdate);
+      observer.disconnect();
     };
-  }, [workSwiper]);
+  }, []);
 
   return (
     <main>
@@ -298,64 +265,24 @@ export default function App() {
       </section>
 
       <section className="works-section" id="work" aria-labelledby="work-title">
-        <div
-          className="horizontal-stage"
-          ref={horizontalStageRef}
-          style={{ '--progress-scale': String((activeWorkPage + 1) / workPageCount) } as CSSProperties}
-        >
-          <div className="horizontal-sticky">
-            <header className="section-header">
-              <p className="section-index">01 / SELECTED WORK</p>
-              <h2 id="work-title">精选作品</h2>
-              <p>商业广告、纪录片、音乐现场与时装影像。<br />以下内容均为演示用虚构项目。</p>
-            </header>
-            <Swiper
-              className="horizontal-viewport"
-              modules={[Mousewheel]}
-              slidesPerView={1}
-              speed={650}
-              resistanceRatio={0.7}
-              mousewheel={{
-                enabled: false,
-                releaseOnEdges: true,
-                thresholdDelta: 25,
-                thresholdTime: 700,
-                sensitivity: 0.8,
-                forceToAxis: false,
-              }}
-              breakpoints={{
-                0: { enabled: false },
-                900: { enabled: true },
-              }}
-              onSwiper={setWorkSwiper}
-              onSlideChange={(swiper) => {
-                setActiveWorkPage(swiper.activeIndex);
-                swiper.slides.forEach((slide, index) => {
-                  if (index !== swiper.activeIndex) slide.querySelector('video')?.pause();
-                });
-              }}
-            >
-              {works.map((work, index) => (
-                <SwiperSlide key={work.enTitle}>
-                  <WorkSlide work={work} index={index} total={workPageCount} />
-                </SwiperSlide>
-              ))}
-            </Swiper>
-            <div className="work-progress" aria-label={`作品 ${activeWorkPage + 1}，共 ${workPageCount} 个`}>
-              <span>{String(activeWorkPage + 1).padStart(2, '0')}</span>
-              <span className="progress-line" aria-hidden="true"><i /></span>
-              <span>{String(workPageCount).padStart(2, '0')}</span>
-            </div>
-          </div>
+        <header className="section-header" data-reveal>
+          <p className="section-index">01 / SELECTED WORK</p>
+          <h2 id="work-title">精选作品</h2>
+          <p>商业广告、纪录片、音乐现场与时装影像。<br />以下内容均为演示用虚构项目。</p>
+        </header>
+        <div className="works-list">
+          {works.map((work, index) => (
+            <WorkItem key={work.enTitle} work={work} index={index} total={workPageCount} />
+          ))}
         </div>
       </section>
 
       <section className="about-section" id="about" aria-labelledby="about-title">
-        <div className="about-label">
+        <div className="about-label" data-reveal>
           <p className="section-index">02 / PROFILE</p>
           <p>BASED IN SHANGHAI<br />AVAILABLE WORLDWIDE</p>
         </div>
-        <div className="about-copy">
+        <div className="about-copy" data-reveal>
           <h2 id="about-title">剪辑不只是连接镜头，<br />而是在时间里安排情绪。</h2>
           <div className="about-details">
             <p>我是古梦雪，一名独立视频剪辑师。过去 7 年里，我参与了品牌短片、人物纪录片、音乐影像与数字内容的后期制作。</p>
@@ -370,12 +297,12 @@ export default function App() {
       </section>
 
       <footer className="contact-section" id="contact">
-        <p className="section-index">03 / CONTACT</p>
-        <p className="contact-kicker">有一个故事准备开剪？</p>
-        <a className="contact-mail" href="mailto:hello@gumengxue.studio">
+        <p className="section-index" data-reveal>03 / CONTACT</p>
+        <p className="contact-kicker" data-reveal>有一个故事准备开剪？</p>
+        <a className="contact-mail" href="mailto:hello@gumengxue.studio" data-reveal>
           HELLO@GUMENGXUE.STUDIO <ArrowUpRight aria-hidden="true" />
         </a>
-        <div className="footer-row">
+        <div className="footer-row" data-reveal>
           <p>© 2026 GU MENGXUE</p>
           <div><a href="#">VIMEO</a><a href="#">INSTAGRAM</a><a href="#">小红书</a></div>
           <a href="#top">返回顶部 ↑</a>
