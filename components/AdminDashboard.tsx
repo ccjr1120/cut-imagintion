@@ -46,12 +46,10 @@ async function createVideoPoster(file: File): Promise<File | null> {
     });
 
     if (!video.videoWidth || !video.videoHeight) return null;
-    const maxWidth = 1600;
-    const scale = Math.min(1, maxWidth / video.videoWidth);
     const canvas = document.createElement('canvas');
-    canvas.width = Math.round(video.videoWidth * scale);
-    canvas.height = Math.round(video.videoHeight * scale);
-    canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d')?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.88));
     return blob ? new File([blob], `${file.name}.jpg`, { type: 'image/jpeg' }) : null;
   } finally {
@@ -77,11 +75,9 @@ async function createVideoScreenshots(file: File, count = 4): Promise<File[]> {
     });
     if (!Number.isFinite(duration) || duration <= 0 || !video.videoWidth || !video.videoHeight) return [];
 
-    const maxWidth = 1600;
-    const scale = Math.min(1, maxWidth / video.videoWidth);
     const canvas = document.createElement('canvas');
-    canvas.width = Math.round(video.videoWidth * scale);
-    canvas.height = Math.round(video.videoHeight * scale);
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
     const screenshots: File[] = [];
 
     for (let index = 0; index < count; index += 1) {
@@ -97,7 +93,7 @@ async function createVideoScreenshots(file: File, count = 4): Promise<File[]> {
         video.addEventListener('error', onError, { once: true });
         video.currentTime = time;
       });
-      canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.getContext('2d')?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.88));
       if (blob) screenshots.push(new File([blob], `${file.name}-still-${index + 1}.jpg`, { type: 'image/jpeg' }));
     }
@@ -139,12 +135,10 @@ async function createPosterFromVideoUrl(url: string): Promise<File> {
       video.currentTime = duration / 2;
     });
 
-    const maxWidth = 1600;
-    const scale = Math.min(1, maxWidth / video.videoWidth);
     const canvas = document.createElement('canvas');
-    canvas.width = Math.round(video.videoWidth * scale);
-    canvas.height = Math.round(video.videoHeight * scale);
-    canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d')?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.88));
     if (!blob) throw new Error('封面生成失败');
     return new File([blob], 'video-middle-frame.jpg', { type: 'image/jpeg' });
@@ -484,11 +478,11 @@ export function AdminDashboard() {
                 <TextField label="片长" value={selectedProject.duration} onChange={(duration) => updateProject({ duration })} placeholder="例如：01:42" />
                 <TextField label="项目描述" wide multiline value={selectedProject.description} onChange={(description) => updateProject({ description })} />
               </div>
-              <div className="form-section-heading"><span>02</span><div><h2>制作信息</h2><p>前台展示为职责、软件和插件</p></div></div>
+              <div className="form-section-heading"><span>02</span><div><h2>制作信息</h2><p>前台展示为亮点、职责和软件</p></div></div>
               <div className="form-grid three-columns">
+                <TextField label="亮点" value={selectedProject.plugins} onChange={(plugins) => updateProject({ plugins })} placeholder="动态字幕 / 节奏设计" />
                 <TextField label="职责" value={selectedProject.role} onChange={(role) => updateProject({ role })} placeholder="剪辑 / 调色" />
                 <TextField label="软件" value={selectedProject.software} onChange={(software) => updateProject({ software })} placeholder="Premiere Pro / Resolve" />
-                <TextField label="插件" value={selectedProject.plugins} onChange={(plugins) => updateProject({ plugins })} placeholder="FilmConvert / Sapphire" />
               </div>
               <div className="form-section-heading"><span>03</span><div><h2>主媒体</h2><p>视频封面和完整视频，可上传或使用外链</p></div></div>
               <div className="media-fields-grid">

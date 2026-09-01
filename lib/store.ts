@@ -50,7 +50,7 @@ function normalizeProject(value: unknown, index: number): Project {
     description: text(item.description, '项目描述', 3000),
     role: text(item.role, '职责', 300),
     software: text(item.software, '软件', 300),
-    plugins: text(item.plugins, '插件', 300),
+    plugins: text(item.plugins, '亮点', 300),
     cover: media(item.cover, '项目封面'),
     video: media(item.video, '项目视频'),
     screenshots: Array.isArray(item.screenshots)

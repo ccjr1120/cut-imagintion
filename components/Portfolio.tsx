@@ -27,9 +27,9 @@ function WorkItem({ project, index, total, variant }: { project: Project; index:
             <p className="work-description">{project.description}</p>
           </div>
           <dl className="work-facts" data-reveal>
+            <div><dt>亮点</dt><dd>{project.plugins || '—'}</dd></div>
             <div><dt>职责</dt><dd>{project.role || '—'}</dd></div>
             <div><dt>软件</dt><dd>{project.software || '—'}</dd></div>
-            <div><dt>插件</dt><dd>{project.plugins || '—'}</dd></div>
           </dl>
         </div>
       </div>

@@ -218,7 +218,8 @@
 .screenshot-index > span { display: block; margin-bottom: 8px; color: var(--admin-accent); font: 9px var(--font-geist-mono), monospace; }
 .screenshot-index .move-buttons { align-items: flex-start; flex-direction: column; }
 .screenshot-index .icon-button { width: 26px; height: 26px; }
-.screenshot-item .media-preview { height: 140px; }
+.screenshot-item .media-preview { height: 140px; background: #171715; }
+.screenshot-item .media-preview img { object-fit: contain; }
 .remove-screenshot { align-self: start; display: flex; align-items: center; gap: 5px; padding: 6px 0; background: transparent; color: #a42b19; cursor: pointer; font-size: 10px; }
 .screenshots-empty { padding: 46px; border: 1px dashed var(--admin-line); color: var(--admin-muted); text-align: center; }
 .screenshots-empty p { margin: 9px 0 0; font-size: 11px; }
