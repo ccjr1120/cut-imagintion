@@ -278,7 +278,7 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
     <main className="admin-login">
       <a href="/" className="login-back"><ArrowLeft size={16} /> 返回作品集</a>
       <form onSubmit={submit} className="login-panel">
-        <div className="login-mark">GM<span>®</span></div>
+        <div className="login-mark">XUE<span>®</span></div>
         <p className="admin-kicker">CONTENT STUDIO</p>
         <h1>内容管理</h1>
         <p>登录后可维护分类、项目资料和媒体文件。</p>
@@ -430,7 +430,7 @@ export function AdminDashboard() {
   return (
     <main className="admin-shell">
       <aside className="admin-sidebar">
-        <header><a href="/" className="admin-brand">GM<span>®</span></a><span>CONTENT STUDIO</span></header>
+        <header><a href="/" className="admin-brand">XUE<span>®</span></a><span>CONTENT STUDIO</span></header>
         <nav aria-label="管理项目">
           <button type="button" className={section === 'projects' ? 'active' : ''} onClick={() => changeSection('projects')}><FolderKanban size={17} /><span>项目</span><em>{content.projects.length}</em></button>
           <button type="button" className={section === 'categories' ? 'active' : ''} onClick={() => changeSection('categories')}><ImageIcon size={17} /><span>分类</span><em>{content.categories.length}</em></button>

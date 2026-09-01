@@ -174,7 +174,7 @@ export function Portfolio({ content }: { content: PortfolioContent }) {
       <header className="work-site-header">
         <div className="work-header-brand">
           <button className="category-back" type="button" onClick={() => navigate(null, null)} aria-label="返回作品分类" title="返回作品分类"><ArrowLeft size={17} /></button>
-          <button className="wordmark" type="button" onClick={() => navigate(null, null)} aria-label="返回古梦雪首页">GM<span>®</span></button>
+          <button className="wordmark" type="button" onClick={() => navigate(null, null)} aria-label="返回古梦雪首页">XUE<span>®</span></button>
         </div>
         <p>{activeCategory.title} / {activeCategory.enTitle}</p><p>{String(visibleProjects.length).padStart(2, '0')} PROJECTS</p>
       </header>
