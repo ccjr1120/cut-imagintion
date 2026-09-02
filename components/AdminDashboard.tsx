@@ -1,10 +1,11 @@
 'use client';
 
-import { ArrowDown, ArrowLeft, ArrowUp, Check, ChevronRight, ExternalLink, FolderKanban, Image as ImageIcon, LoaderCircle, LogOut, Plus, RefreshCw, Save, Trash2, Upload, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowUp, Check, ChevronRight, ExternalLink, FileText, FolderKanban, Image as ImageIcon, LoaderCircle, LogOut, Plus, RefreshCw, Save, Trash2, Upload, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Category, PortfolioContent, Project } from '@/lib/types';
+import { resumeRoles } from '@/lib/resume';
+import type { Category, PortfolioContent, Project, ResumeCampus, ResumeContent, ResumeCopy, ResumeEducation, ResumePersonalCategory, ResumeProject, ResumeRole } from '@/lib/types';
 
-type Section = 'categories' | 'projects';
+type Section = 'categories' | 'projects' | 'resume';
 type Notice = { type: 'ok' | 'error'; message: string } | null;
 
 function makeId(label: string, existing: string[]) {
@@ -249,6 +250,74 @@ function MoveButtons({ index, total, onMove }: { index: number; total: number; o
   );
 }
 
+function ResumeEditor({ resume, role, onUpdate }: { resume: ResumeContent; role: ResumeRole; onUpdate: (patch: Partial<ResumeContent>) => void }) {
+  const copy = resume.roleCopies[role];
+  const roleLabel = resume.roleLabels[role];
+
+  function updateCopy(patch: Partial<ResumeCopy>) {
+    onUpdate({ roleCopies: { ...resume.roleCopies, [role]: { ...copy, ...patch } } });
+  }
+
+  function updateLabel(patch: Partial<ResumeContent['roleLabels'][ResumeRole]>) {
+    onUpdate({ roleLabels: { ...resume.roleLabels, [role]: { ...roleLabel, ...patch } } });
+  }
+
+  function updateEducation(patch: Partial<ResumeEducation>) {
+    onUpdate({ education: { ...resume.education, ...patch } });
+  }
+
+  function updateCampus(patch: Partial<ResumeCampus>) {
+    onUpdate({ campus: { ...resume.campus, ...patch } });
+  }
+
+  function updateProject(index: number, patch: Partial<ResumeProject>) {
+    onUpdate({ projects: resume.projects.map((project, projectIndex) => projectIndex === index ? { ...project, ...patch } : project) });
+  }
+
+  function updatePersonalCategory(index: number, patch: Partial<ResumePersonalCategory>) {
+    onUpdate({ personalCategories: resume.personalCategories.map((category, categoryIndex) => categoryIndex === index ? { ...category, ...patch } : category) });
+  }
+
+  return (
+    <form className="editor-form resume-editor-form" onSubmit={(event) => event.preventDefault()}>
+      <div className="form-section-heading"><span>01</span><div><h2>基本信息</h2><p>简历姓名、联系方式和作品集入口</p></div></div>
+      <div className="form-grid">
+        <TextField label="姓名" required value={resume.name} onChange={(name) => onUpdate({ name })} />
+        <TextField label="电话" value={resume.phone} onChange={(phone) => onUpdate({ phone })} />
+        <TextField label="邮箱" value={resume.email} onChange={(email) => onUpdate({ email })} />
+        <TextField label="底部更新时间" value={resume.updatedLabel} onChange={(updatedLabel) => onUpdate({ updatedLabel })} placeholder="例如：UPDATED 2026" />
+        <TextField label="作品集链接" wide value={resume.portfolioUrl} onChange={(portfolioUrl) => onUpdate({ portfolioUrl })} />
+        <TextField label="作品集链接文字" wide value={resume.portfolioLabel} onChange={(portfolioLabel) => onUpdate({ portfolioLabel })} />
+      </div>
+
+      <div className="form-section-heading"><span>02</span><div><h2>岗位版本</h2><p>当前版本：{roleLabel.label}。切换左侧版本可分别编辑三份简历。</p></div></div>
+      <div className="form-grid">
+        <TextField label="岗位名称" required value={roleLabel.label} onChange={(label) => updateLabel({ label })} />
+        <TextField label="切换按钮名称" required value={roleLabel.shortLabel} onChange={(shortLabel) => updateLabel({ shortLabel })} />
+        <TextField label="岗位英文眉题" wide value={copy.eyebrow} onChange={(eyebrow) => updateCopy({ eyebrow })} />
+        <TextField label="岗位简介" wide multiline value={copy.summary} onChange={(summary) => updateCopy({ summary })} />
+      </div>
+      <div className="form-section-heading"><span>03</span><div><h2>技能与自我评价</h2><p>当前岗位版本在简历中展示的技能条目与自我评价</p></div><button type="button" className="secondary-button" onClick={() => updateCopy({ skills: [...copy.skills, { label: '', value: '' }] })}><Plus size={15} />添加技能</button></div>
+      <div className="resume-editor-list">
+        {copy.skills.map((skill, index) => <div className="resume-editor-item resume-skill-item" key={`${skill.label}-${index}`}><TextField label={`技能 ${index + 1}`} value={skill.label} onChange={(label) => updateCopy({ skills: copy.skills.map((item, itemIndex) => itemIndex === index ? { ...item, label } : item) })} /><TextField label="技能内容" value={skill.value} onChange={(value) => updateCopy({ skills: copy.skills.map((item, itemIndex) => itemIndex === index ? { ...item, value } : item) })} /><button type="button" className="remove-screenshot" onClick={() => updateCopy({ skills: copy.skills.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={15} />删除</button></div>)}
+      </div>
+      <TextField label="自我评价" wide multiline value={copy.selfEvaluation} onChange={(selfEvaluation) => updateCopy({ selfEvaluation })} />
+      <div className="form-section-heading"><span>04</span><div><h2>教育背景</h2><p>当前简历中的教育经历</p></div></div>
+      <div className="form-grid"><TextField label="时间" value={resume.education.period} onChange={(period) => updateEducation({ period })} /><TextField label="学校" value={resume.education.school} onChange={(school) => updateEducation({ school })} /><TextField label="专业" wide value={resume.education.major} onChange={(major) => updateEducation({ major })} /></div>
+
+      <div className="form-section-heading"><span>05</span><div><h2>校园经历</h2><p>校园工作室经历及要点</p></div><button type="button" className="secondary-button" onClick={() => updateCampus({ bullets: [...resume.campus.bullets, ''] })}><Plus size={15} />添加要点</button></div>
+      <div className="form-grid"><TextField label="经历标题" wide value={resume.campus.title} onChange={(title) => updateCampus({ title })} /><TextField label="时间" value={resume.campus.period} onChange={(period) => updateCampus({ period })} /><TextField label="组织" value={resume.campus.organization} onChange={(organization) => updateCampus({ organization })} /><TextField label="职位" value={resume.campus.role} onChange={(role) => updateCampus({ role })} /></div>
+      <div className="resume-editor-list">{resume.campus.bullets.map((bullet, index) => <div className="resume-editor-item resume-bullet-item" key={`${index}-${bullet}`}><TextField label={`经历要点 ${index + 1}`} wide multiline value={bullet} onChange={(value) => updateCampus({ bullets: resume.campus.bullets.map((item, itemIndex) => itemIndex === index ? value : item) })} /><button type="button" className="remove-screenshot" onClick={() => updateCampus({ bullets: resume.campus.bullets.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={15} />删除</button></div>)}</div>
+
+      <div className="form-section-heading"><span>06</span><div><h2>项目经历</h2><p>简历中展示的项目内容，与前台作品项目独立维护</p></div><button type="button" className="secondary-button" onClick={() => onUpdate({ projects: [...resume.projects, { id: `resume-project-${Date.now()}`, title: '', type: '', year: '', description: '', role: '', software: '' }] })}><Plus size={15} />添加项目</button></div>
+      <div className="resume-editor-list">{resume.projects.map((project, index) => <div className="resume-editor-item resume-project-item" key={project.id}><div className="resume-editor-item-heading"><strong>项目 {String(index + 1).padStart(2, '0')}</strong><button type="button" className="remove-screenshot" onClick={() => onUpdate({ projects: resume.projects.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={15} />删除</button></div><div className="form-grid"><TextField label="项目名称" value={project.title} onChange={(title) => updateProject(index, { title })} /><TextField label="类型" value={project.type} onChange={(type) => updateProject(index, { type })} /><TextField label="年份" value={project.year} onChange={(year) => updateProject(index, { year })} /><TextField label="软件" value={project.software} onChange={(software) => updateProject(index, { software })} /><TextField label="项目描述" wide multiline value={project.description} onChange={(description) => updateProject(index, { description })} /><TextField label="职责" wide multiline value={project.role} onChange={(role) => updateProject(index, { role })} /></div></div>)}</div>
+
+      <div className="form-section-heading"><span>07</span><div><h2>个人项目分类</h2><p>简历中个人项目区域的分类标题和说明</p></div><button type="button" className="secondary-button" onClick={() => onUpdate({ personalCategories: [...resume.personalCategories, { categoryId: `resume-category-${Date.now()}`, title: '', description: '' }] })}><Plus size={15} />添加分类</button></div>
+      <div className="resume-editor-list">{resume.personalCategories.map((category, index) => <div className="resume-editor-item resume-project-item" key={`${category.categoryId}-${index}`}><div className="resume-editor-item-heading"><strong>分类 {String(index + 1).padStart(2, '0')}</strong><button type="button" className="remove-screenshot" onClick={() => onUpdate({ personalCategories: resume.personalCategories.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={15} />删除</button></div><div className="form-grid"><TextField label="分类标题" value={category.title} onChange={(title) => updatePersonalCategory(index, { title })} /><TextField label="关联分类 ID" value={category.categoryId} onChange={(categoryId) => updatePersonalCategory(index, { categoryId })} /><TextField label="分类说明" wide multiline value={category.description} onChange={(description) => updatePersonalCategory(index, { description })} /></div></div>)}</div>
+    </form>
+  );
+}
+
 function Login({ onSuccess }: { onSuccess: () => void }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -275,7 +344,7 @@ function Login({ onSuccess }: { onSuccess: () => void }) {
         <div className="login-mark">XUE<span>®</span></div>
         <p className="admin-kicker">CONTENT STUDIO</p>
         <h1>内容管理</h1>
-        <p>登录后可维护分类、项目资料和媒体文件。</p>
+        <p>登录后可维护分类、项目资料、简历和媒体文件。</p>
         <label>管理员密码</label>
         <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoFocus autoComplete="current-password" placeholder="输入密码" />
         {error && <p className="login-error">{error}</p>}
@@ -314,7 +383,8 @@ export function AdminDashboard() {
 
   const selectedCategory = section === 'categories' ? content?.categories.find((item) => item.id === selectedId) : undefined;
   const selectedProject = section === 'projects' ? content?.projects.find((item) => item.id === selectedId) : undefined;
-  const list = section === 'categories' ? content?.categories || [] : content?.projects || [];
+  const selectedResumeRole = section === 'resume' && resumeRoles.includes(selectedId as ResumeRole) ? selectedId as ResumeRole : undefined;
+  const list = section === 'categories' ? content?.categories || [] : section === 'projects' ? content?.projects || [] : resumeRoles.map((role) => ({ id: role, title: content?.resume.roleLabels[role].label || role, enTitle: content?.resume.roleLabels[role].shortLabel || '' }));
 
   const projectCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -338,14 +408,21 @@ export function AdminDashboard() {
     mutate((current) => ({ ...current, projects: current.projects.map((item) => item.id === selectedProject.id ? { ...item, ...patch } : item) }));
   }
 
+  function updateResume(patch: Partial<ResumeContent>) {
+    if (!content) return;
+    mutate((current) => ({ ...current, resume: { ...current.resume, ...patch } }));
+  }
+
   function changeSection(next: Section) {
     setSection(next);
+    if (next === 'resume') { setSelectedId(resumeRoles[0]); return; }
     const items = next === 'categories' ? content?.categories : content?.projects;
     setSelectedId(items?.[0]?.id || '');
   }
 
   function addItem() {
     if (!content) return;
+    if (section === 'resume') return;
     if (section === 'categories') {
       const id = makeId('new-category', content.categories.map((item) => item.id));
       const category: Category = { id, title: '新分类', enTitle: 'NEW CATEGORY', description: '', cover: '', orientation: 'landscape' };
@@ -362,6 +439,7 @@ export function AdminDashboard() {
 
   async function removeItem() {
     if (!content) return;
+    if (section === 'resume') return;
     if (section === 'categories') {
       if (!selectedCategory) return;
       if (projectCounts[selectedCategory.id]) { setNotice({ type: 'error', message: '这个分类下还有项目，请先移动或删除相关项目' }); return; }
@@ -378,7 +456,7 @@ export function AdminDashboard() {
   }
 
   function moveItem(direction: -1 | 1) {
-    if (!content) return;
+    if (!content || section === 'resume') return;
     const key = section;
     const items = [...content[key]] as Array<Category | Project>;
     const index = items.findIndex((item) => item.id === selectedId);
@@ -428,12 +506,13 @@ export function AdminDashboard() {
         <nav aria-label="管理项目">
           <button type="button" className={section === 'projects' ? 'active' : ''} onClick={() => changeSection('projects')}><FolderKanban size={17} /><span>项目</span><em>{content.projects.length}</em></button>
           <button type="button" className={section === 'categories' ? 'active' : ''} onClick={() => changeSection('categories')}><ImageIcon size={17} /><span>分类</span><em>{content.categories.length}</em></button>
+          <button type="button" className={section === 'resume' ? 'active' : ''} onClick={() => changeSection('resume')}><FileText size={17} /><span>简历</span><em>{resumeRoles.length}</em></button>
         </nav>
         <footer><a href="/" target="_blank"><ExternalLink size={15} />查看前台</a><button type="button" onClick={() => void logout()}><LogOut size={15} />退出</button></footer>
       </aside>
 
       <section className="admin-list-panel">
-        <header><div><p>{section === 'projects' ? 'PROJECTS' : 'CATEGORIES'}</p><h1>{section === 'projects' ? '项目' : '分类'}</h1></div><button type="button" className="icon-button add-button" onClick={addItem} title={section === 'projects' ? '新建项目' : '新建分类'}><Plus size={18} /></button></header>
+        <header><div><p>{section === 'projects' ? 'PROJECTS' : section === 'categories' ? 'CATEGORIES' : 'RESUME'}</p><h1>{section === 'projects' ? '项目' : section === 'categories' ? '分类' : '简历'}</h1></div>{section !== 'resume' && <button type="button" className="icon-button add-button" onClick={addItem} title={section === 'projects' ? '新建项目' : '新建分类'}><Plus size={18} /></button>}</header>
         <div className="admin-items">
           {list.map((item, index) => {
             const category = section === 'projects' ? content.categories.find((entry) => entry.id === (item as Project).categoryId) : null;
@@ -445,8 +524,8 @@ export function AdminDashboard() {
 
       <section className="admin-editor">
         <header className="editor-toolbar">
-          <div>{selectedCategory || selectedProject ? <><span>{section === 'projects' ? 'EDIT PROJECT' : 'EDIT CATEGORY'}</span><strong>{selectedProject?.title || selectedCategory?.title}</strong></> : <strong>选择一项开始编辑</strong>}</div>
-          {(selectedCategory || selectedProject) && <div className="toolbar-actions"><MoveButtons index={list.findIndex((item) => item.id === selectedId)} total={list.length} onMove={moveItem} /><button type="button" className="danger-icon" onClick={removeItem} title="删除"><Trash2 size={16} /></button><button type="button" className="save-button" disabled={!dirty || saving} onClick={() => void save()}>{saving ? <LoaderCircle className="spin" size={16} /> : dirty ? <Save size={16} /> : <Check size={16} />}{saving ? '保存中' : dirty ? '发布修改' : '已保存'}</button></div>}
+          <div>{selectedCategory || selectedProject || selectedResumeRole ? <><span>{section === 'projects' ? 'EDIT PROJECT' : section === 'categories' ? 'EDIT CATEGORY' : 'EDIT RESUME'}</span><strong>{selectedProject?.title || selectedCategory?.title || content.resume.roleLabels[selectedResumeRole || resumeRoles[0]].label}</strong></> : <strong>选择一项开始编辑</strong>}</div>
+          {(selectedCategory || selectedProject || selectedResumeRole) && <div className="toolbar-actions">{section !== 'resume' && <><MoveButtons index={list.findIndex((item) => item.id === selectedId)} total={list.length} onMove={moveItem} /><button type="button" className="danger-icon" onClick={removeItem} title="删除"><Trash2 size={16} /></button></>}<button type="button" className="save-button" disabled={!dirty || saving} onClick={() => void save()}>{saving ? <LoaderCircle className="spin" size={16} /> : dirty ? <Save size={16} /> : <Check size={16} />}{saving ? '保存中' : dirty ? '发布修改' : '已保存'}</button></div>}
         </header>
         {notice && <div className={`admin-notice ${notice.type}`}><span>{notice.message}</span><button type="button" onClick={() => setNotice(null)}><X size={15} /></button></div>}
 
@@ -504,6 +583,8 @@ export function AdminDashboard() {
               </div>
             </form>
           )}
+
+          {selectedResumeRole && <ResumeEditor resume={content.resume} role={selectedResumeRole} onUpdate={updateResume} />}
         </div>
       </section>
     </main>

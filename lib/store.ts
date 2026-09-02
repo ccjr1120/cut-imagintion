@@ -1,5 +1,6 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { normalizeResume } from './resume';
 import type { Category, PortfolioContent, Project } from './types';
 
 const dataFile = process.env.PORTFOLIO_DATA_FILE || path.join(process.cwd(), 'data', 'portfolio.json');
@@ -73,12 +74,13 @@ export function validateContent(value: unknown): PortfolioContent {
   if (new Set(categories.map((item) => item.id)).size !== categories.length) throw new Error('分类 ID 不能重复');
   if (new Set(projects.map((item) => item.id)).size !== projects.length) throw new Error('项目 ID 不能重复');
   if (projects.some((item) => !categoryIds.has(item.categoryId))) throw new Error('有项目引用了不存在的分类');
-  return { categories, projects, updatedAt: new Date().toISOString() };
+  return { categories, projects, resume: normalizeResume(source.resume), updatedAt: new Date().toISOString() };
 }
 
 export async function readContent(): Promise<PortfolioContent> {
   const raw = await readFile(/* turbopackIgnore: true */ dataFile, 'utf8');
-  return JSON.parse(raw) as PortfolioContent;
+  const source = JSON.parse(raw) as Record<string, unknown>;
+  return { ...source, resume: normalizeResume(source.resume) } as PortfolioContent;
 }
 
 let pendingWrite = Promise.resolve();

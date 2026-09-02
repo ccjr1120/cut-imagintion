@@ -223,6 +223,14 @@
 .remove-screenshot { align-self: start; display: flex; align-items: center; gap: 5px; padding: 6px 0; background: transparent; color: #a42b19; cursor: pointer; font-size: 10px; }
 .screenshots-empty { padding: 46px; border: 1px dashed var(--admin-line); color: var(--admin-muted); text-align: center; }
 .screenshots-empty p { margin: 9px 0 0; font-size: 11px; }
+.resume-editor-list { display: grid; gap: 15px; margin-bottom: 24px; }
+.resume-editor-item { min-width: 0; padding: 16px; border: 1px solid var(--admin-line); background: #fafaf8; }
+.resume-skill-item { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) auto; gap: 16px; align-items: end; }
+.resume-bullet-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: end; }
+.resume-project-item { display: grid; gap: 16px; }
+.resume-editor-item-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 4px; }
+.resume-editor-item-heading strong { color: var(--admin-accent); font: 10px var(--font-geist-mono), monospace; }
+.resume-editor-form > .admin-field { margin-top: 20px; }
 
 .admin-login { position: relative; display: grid; min-height: 100svh; place-items: center; padding: 40px 20px; }
 .admin-login::before { content: ''; position: absolute; inset: 0 50% 0 0; background: #171715; }
@@ -257,7 +265,7 @@
   .admin-shell { display: block; overflow: visible; }
   .admin-sidebar { position: fixed; z-index: 10; right: 0; bottom: 0; left: 0; width: auto; height: 58px; flex-direction: row; align-items: center; padding: 6px 12px; }
   .admin-sidebar header, .admin-sidebar footer { display: none; }
-  .admin-sidebar nav { width: 100%; grid-template-columns: 1fr 1fr; padding: 0; }
+  .admin-sidebar nav { width: 100%; grid-template-columns: repeat(3, 1fr); padding: 0; }
   .admin-sidebar nav button { min-height: 46px; grid-template-columns: 22px auto; justify-content: center; gap: 6px; }
   .admin-sidebar nav button span { font-size: 11px; }
   .admin-list-panel { height: auto; border: 0; }
