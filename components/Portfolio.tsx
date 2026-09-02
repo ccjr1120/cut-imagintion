@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, ArrowUpRight, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { PortfolioContent, Project } from '@/lib/types';
 
@@ -50,44 +50,48 @@ function WorkItem({ project, index, total, variant, orientation }: { project: Pr
 
 export function Portfolio({ content }: { content: PortfolioContent }) {
   const categoryIds = useMemo(() => new Set(content.categories.map((item) => item.id)), [content.categories]);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(() => {
-    const value = readParam('category');
-    return value && categoryIds.has(value) ? value : null;
-  });
-  const [activePanel, setActivePanel] = useState<InfoPanel | null>(() => {
-    const value = readParam('panel');
-    return value === 'about' || value === 'contact' ? value : null;
-  });
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [activePanel, setActivePanel] = useState<InfoPanel | null>(null);
   const activeCategory = content.categories.find((item) => item.id === selectedCategory);
   const visibleProjects = content.projects.filter((item) => item.categoryId === selectedCategory);
+  const activeProject = visibleProjects.find((item) => item.id === selectedProject);
   const density = content.categories.length > 6 ? 'compact' : content.categories.length > 3 ? 'dense' : 'standard';
 
-  const navigate = useCallback((category: string | null, panel: InfoPanel | null) => {
+  const navigate = useCallback((category: string | null, panel: InfoPanel | null, project: string | null = null) => {
     const params = new URLSearchParams(window.location.search);
     params.delete('category');
     params.delete('panel');
+    params.delete('project');
     if (category) params.set('category', category);
     if (panel) params.set('panel', panel);
+    if (project) params.set('project', project);
     const search = params.toString();
     window.history.pushState({}, '', `${window.location.pathname}${search ? `?${search}` : ''}`);
     setSelectedCategory(category);
     setActivePanel(panel);
+    setSelectedProject(project);
   }, []);
 
   useEffect(() => {
     const sync = () => {
       const category = readParam('category');
       const panel = readParam('panel');
-      setSelectedCategory(category && categoryIds.has(category) ? category : null);
+      const nextCategory = category && categoryIds.has(category) ? category : null;
+      const project = readParam('project');
+      const nextProject = project && content.projects.some((item) => item.id === project && item.categoryId === nextCategory) ? project : null;
+      setSelectedCategory(nextCategory);
       setActivePanel(panel === 'about' || panel === 'contact' ? panel : null);
+      setSelectedProject(nextProject);
     };
+    sync();
     window.addEventListener('popstate', sync);
     return () => window.removeEventListener('popstate', sync);
-  }, [categoryIds]);
+  }, [categoryIds, content.projects]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
-  }, [selectedCategory]);
+  }, [selectedCategory, selectedProject]);
 
   useEffect(() => {
     if (!activePanel) return;
@@ -112,7 +116,7 @@ export function Portfolio({ content }: { content: PortfolioContent }) {
     }), { threshold: 0.14, rootMargin: '0px 0px -6% 0px' });
     revealElements.forEach((item) => observer.observe(item));
     return () => { observer.disconnect(); playbackObserver.disconnect(); };
-  }, [selectedCategory]);
+  }, [selectedCategory, selectedProject]);
 
   const renderCategoryPanel = (category: (typeof content.categories)[number], index: number) => {
     const cover = category.cover || content.projects.find((project) => project.categoryId === category.id)?.cover || '';
@@ -176,19 +180,65 @@ export function Portfolio({ content }: { content: PortfolioContent }) {
     );
   }
 
+  if (!activeProject) {
+    return (
+      <main className="portfolio-shell portfolio-directory" data-orientation={activeCategory.orientation || 'landscape'}>
+        <header className="work-site-header">
+          <div className="work-header-brand">
+            <button className="category-back" type="button" onClick={() => navigate(null, null)} aria-label="返回作品分类" title="返回作品分类"><ArrowLeft size={17} /></button>
+            <button className="wordmark" type="button" onClick={() => navigate(null, null)} aria-label="返回古梦雪首页">XUE<span>®</span></button>
+          </div>
+          <p>{activeCategory.title} / {activeCategory.enTitle}</p><p>{String(visibleProjects.length).padStart(2, '0')} PROJECTS</p>
+        </header>
+        <section className="directory-section" aria-labelledby="directory-title">
+          <div className="directory-intro" data-reveal>
+            <div>
+              <p className="section-index">01 / PROJECT INDEX</p>
+              <h1 id="directory-title">{activeCategory.title}</h1>
+            </div>
+            <p>{activeCategory.description}。<br />选择一个项目，查看完整视频与制作细节。</p>
+          </div>
+          <div className="directory-layout">
+            <div className="directory-list" aria-label={`${activeCategory.title}项目目录`}>
+              {visibleProjects.length ? visibleProjects.map((project, index) => (
+                <button className="directory-item" type="button" key={project.id} onClick={() => navigate(selectedCategory, null, project.id)} data-orientation={activeCategory.orientation || 'landscape'}>
+                  <span className="directory-item-index">{String(index + 1).padStart(2, '0')}</span>
+                  <span className="directory-thumb">{project.cover ? <img src={project.cover} alt="" loading="lazy" /> : <span aria-hidden="true">NO COVER</span>}</span>
+                  <span className="directory-item-copy"><strong>{project.title}</strong><span>{project.enTitle}</span><small>{project.type || '视频剪辑'} · {project.year}{project.duration ? ` · ${project.duration}` : ''}</small></span>
+                  <ArrowUpRight className="directory-item-arrow" aria-hidden="true" />
+                </button>
+              )) : <p className="empty-projects">这个分类还没有发布项目。</p>}
+            </div>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="portfolio-shell" data-orientation={activeCategory.orientation || 'landscape'}>
       <header className="work-site-header">
         <div className="work-header-brand">
-          <button className="category-back" type="button" onClick={() => navigate(null, null)} aria-label="返回作品分类" title="返回作品分类"><ArrowLeft size={17} /></button>
+          <button className="category-back" type="button" onClick={() => navigate(selectedCategory, null, null)} aria-label="返回项目目录" title="返回项目目录"><ArrowLeft size={17} /></button>
           <button className="wordmark" type="button" onClick={() => navigate(null, null)} aria-label="返回古梦雪首页">XUE<span>®</span></button>
         </div>
-        <p>{activeCategory.title} / {activeCategory.enTitle}</p><p>{String(visibleProjects.length).padStart(2, '0')} PROJECTS</p>
+        <p>{activeCategory.title} / {activeProject.title}</p><p>{String(visibleProjects.indexOf(activeProject) + 1).padStart(2, '0')} / {String(visibleProjects.length).padStart(2, '0')}</p>
       </header>
       <section className="works-section" id="work" aria-labelledby="work-title">
-        <header className="section-header" data-reveal><p className="section-index">01 / {activeCategory.enTitle}</p><h2 id="work-title">{activeCategory.title}</h2><p>{activeCategory.description}。</p></header>
+        <header className="section-header" data-reveal><p className="section-index">01 / {activeCategory.enTitle} / DETAIL</p><h2 id="work-title">{activeProject.title}</h2><p>{activeCategory.description}。</p></header>
         <div className="works-list">
-          {visibleProjects.length ? visibleProjects.map((project, index) => <WorkItem key={project.id} project={project} index={index} total={visibleProjects.length} variant={content.projects.indexOf(project)} orientation={activeCategory.orientation || 'landscape'} />) : <p className="empty-projects">这个分类还没有发布项目。</p>}
+          <WorkItem project={activeProject} index={visibleProjects.indexOf(activeProject)} total={visibleProjects.length} variant={content.projects.indexOf(activeProject)} orientation={activeCategory.orientation || 'landscape'} />
+          <div className="detail-navigation" aria-label="切换项目">
+            {(() => {
+              const projectIndex = visibleProjects.indexOf(activeProject);
+              const previous = visibleProjects[projectIndex - 1];
+              const next = visibleProjects[projectIndex + 1];
+              return <>
+                <button type="button" onClick={() => previous && navigate(selectedCategory, null, previous.id)} disabled={!previous}><ArrowLeft size={16} /><span>{previous ? previous.title : '已经是第一个项目'}</span></button>
+                <button type="button" onClick={() => next && navigate(selectedCategory, null, next.id)} disabled={!next}><span>{next ? next.title : '已经是最后一个项目'}</span><ArrowRight size={16} /></button>
+              </>;
+            })()}
+          </div>
         </div>
       </section>
     </main>

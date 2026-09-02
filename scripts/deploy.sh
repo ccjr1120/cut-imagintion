@@ -51,6 +51,13 @@ SSH_ARGS+=(
   -o ControlPersist=120
   -o ControlPath="$SSH_CONTROL_PATH"
 )
+SCP_ARGS=(scp -P "$DEPLOY_PORT" -o ConnectTimeout=15)
+if [[ -n "${DEPLOY_SSH_KEY:-}" ]]; then SCP_ARGS+=(-i "$DEPLOY_SSH_KEY"); fi
+SCP_ARGS+=(
+  -o ControlMaster=auto
+  -o ControlPersist=120
+  -o ControlPath="$SSH_CONTROL_PATH"
+)
 TARGET="${DEPLOY_USER}@${DEPLOY_HOST}"
 
 cleanup_ssh() {
@@ -72,6 +79,31 @@ run_ssh() {
     sleep "$((attempt * 2))"
     attempt=$((attempt + 1))
   done
+}
+
+run_scp() {
+  local attempt=1 status
+  while (( attempt <= 4 )); do
+    if [[ -n "${DEPLOY_PASSWORD:-}" ]]; then
+      SSHPASS="$DEPLOY_PASSWORD" sshpass -e "${SCP_ARGS[@]}" "$@" && return 0
+    else
+      "${SCP_ARGS[@]}" "$@" && return 0
+    fi
+    status=$?
+    if (( status != 255 || attempt == 4 )); then return "$status"; fi
+    printf 'SCP connection interrupted; retrying (%s/4)...\n' "$((attempt + 1))" >&2
+    sleep "$((attempt * 2))"
+    attempt=$((attempt + 1))
+  done
+}
+
+cleanup_archive() {
+  if [[ -n "${ARCHIVE_FILE:-}" ]]; then rm -f "$ARCHIVE_FILE"; fi
+}
+
+cleanup_deploy() {
+  cleanup_archive
+  cleanup_ssh
 }
 
 run_sudo() {
@@ -103,6 +135,17 @@ cp -R .next/standalone .deploy
 mkdir -p .deploy/.next
 cp -R .next/static .deploy/.next/static
 cp -R public .deploy/public
+# Production reads media from $DEPLOY_PATH/shared/media, so local test media
+# must never be included in the uploaded application artifact.
+rm -rf .deploy/storage/media
+
+# Upload a replayable archive. Retrying an SSH command that reads a pipe can
+# silently send an empty/partial stream after the original stdin is consumed.
+ARCHIVE_FILE="$(mktemp -t gmx-deploy.XXXXXX)"
+trap cleanup_deploy EXIT
+COPYFILE_DISABLE=1 COPY_EXTENDED_ATTRIBUTES_DISABLE=1 tar -C .deploy -czf "$ARCHIVE_FILE" .
+printf 'Deployment archive: '
+du -h "$ARCHIVE_FILE" | cut -f1
 
 if ! run_ssh "$TARGET" "true"; then
   printf 'Unable to establish an SSH connection to %s.\n' "$TARGET" >&2
@@ -113,11 +156,23 @@ if ! run_ssh "$TARGET" "command -v node >/dev/null 2>&1"; then
   exit 1
 fi
 run_ssh "$TARGET" "mkdir -p '$DEPLOY_PATH/app' '$DEPLOY_PATH/shared/media' '$DEPLOY_PATH/shared/data'"
-# macOS tar otherwise stores Apple extended attributes that GNU tar on the
-# server does not understand (for example, LIBARCHIVE.xattr.com.apple.provenance).
-COPYFILE_DISABLE=1 tar -C .deploy -czf - . | run_ssh "$TARGET" "find '$DEPLOY_PATH/app' -mindepth 1 -maxdepth 1 -exec rm -rf -- {} + && tar -xzf - -C '$DEPLOY_PATH/app'"
+REMOTE_ARCHIVE="$DEPLOY_PATH/.${DEPLOY_SERVICE_NAME}.deploy.tar.gz"
+REMOTE_STAGE="$DEPLOY_PATH/.${DEPLOY_SERVICE_NAME}.app.$$.new"
+run_scp "$ARCHIVE_FILE" "$TARGET:$REMOTE_ARCHIVE"
+run_ssh "$TARGET" "set -e
+rm -rf '$REMOTE_STAGE'
+mkdir -p '$REMOTE_STAGE'
+tar -tzf '$REMOTE_ARCHIVE' >/dev/null
+tar -xzf '$REMOTE_ARCHIVE' -C '$REMOTE_STAGE'
+test -f '$REMOTE_STAGE/server.js'
+test -d '$REMOTE_STAGE/.next/static'
+test -n \"\$(find '$REMOTE_STAGE/.next/static' -type f -print -quit)\"
+if test -e '$DEPLOY_PATH/app.previous'; then rm -rf '$DEPLOY_PATH/app.previous'; fi
+mv '$DEPLOY_PATH/app' '$DEPLOY_PATH/app.previous'
+mv '$REMOTE_STAGE' '$DEPLOY_PATH/app'
+rm -rf '$DEPLOY_PATH/app.previous' '$REMOTE_ARCHIVE'"
 if ! run_ssh "$TARGET" "test -f '$DEPLOY_PATH/shared/data/portfolio.json'"; then
-  run_ssh "$TARGET" "cat > '$DEPLOY_PATH/shared/data/portfolio.json'" < data/portfolio.json
+  run_scp "$ROOT_DIR/data/portfolio.json" "$TARGET:$DEPLOY_PATH/shared/data/portfolio.json"
 fi
 
 ENV_TEMP="/tmp/${DEPLOY_SERVICE_NAME}.env.$$"
