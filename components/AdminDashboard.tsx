@@ -348,7 +348,7 @@ export function AdminDashboard() {
     if (!content) return;
     if (section === 'categories') {
       const id = makeId('new-category', content.categories.map((item) => item.id));
-      const category: Category = { id, title: '新分类', enTitle: 'NEW CATEGORY', description: '', cover: '' };
+      const category: Category = { id, title: '新分类', enTitle: 'NEW CATEGORY', description: '', cover: '', orientation: 'landscape' };
       mutate((current) => ({ ...current, categories: [...current.categories, category] }));
       setSelectedId(id);
     } else {
@@ -459,6 +459,7 @@ export function AdminDashboard() {
                 <TextField label="英文名称" required value={selectedCategory.enTitle} onChange={(enTitle) => updateCategory({ enTitle })} />
                 <div className="admin-field"><label>分类 ID<span>稳定标识</span></label><input value={selectedCategory.id} disabled /></div>
                 <div className="admin-field"><label>项目数量</label><input value={`${projectCounts[selectedCategory.id] || 0} 个项目`} disabled /></div>
+                <div className="admin-field"><label>视频方向<span>决定前台展示比例</span></label><select value={selectedCategory.orientation || 'landscape'} onChange={(event) => updateCategory({ orientation: event.target.value as Category['orientation'] })}><option value="landscape">横屏（16:9）</option><option value="portrait">竖屏（9:16）</option></select></div>
                 <TextField label="分类描述" wide multiline value={selectedCategory.description} onChange={(description) => updateCategory({ description })} />
               </div>
               <div className="form-section-heading"><span>02</span><div><h2>分类封面</h2><p>首页分类拼贴中展示的主视觉</p></div></div>

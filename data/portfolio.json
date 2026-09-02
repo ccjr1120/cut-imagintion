@@ -5,28 +5,32 @@
       "title": "信息流",
       "enTitle": "?",
       "description": "千川广告投放、带货",
-      "cover": ""
+      "cover": "",
+      "orientation": "portrait"
     },
     {
       "id": "new-category-2",
       "title": "口播",
       "enTitle": "koubo",
       "description": "口播带货",
-      "cover": ""
+      "cover": "",
+      "orientation": "portrait"
     },
     {
       "id": "new-category-3",
       "title": "混剪",
       "enTitle": "混剪",
       "description": "动漫，影片混剪",
-      "cover": ""
+      "cover": "",
+      "orientation": "landscape"
     },
     {
       "id": "new-category-4",
       "title": "mg动画",
       "enTitle": "mg",
       "description": "mg扁平化动画，特效",
-      "cover": ""
+      "cover": "",
+      "orientation": "landscape"
     }
   ],
   "projects": [
@@ -170,5 +174,5 @@
       ]
     }
   ],
-  "updatedAt": "2026-09-01T09:31:07.667Z"
+  "updatedAt": "2026-09-01T12:49:13.599Z"
 }

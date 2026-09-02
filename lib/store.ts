@@ -33,6 +33,8 @@ function normalizeCategory(value: unknown, index: number): Category {
     enTitle: requiredText(item.enTitle, '分类英文名', 100),
     description: text(item.description, '分类描述', 500),
     cover: media(item.cover, '分类封面'),
+    // Categories created before orientation was introduced remain landscape.
+    orientation: item.orientation === 'portrait' ? 'portrait' : 'landscape',
   };
 }
 

@@ -4,6 +4,7 @@ export type Category = {
   enTitle: string;
   description: string;
   cover: string;
+  orientation: 'landscape' | 'portrait';
 };
 
 export type Project = {

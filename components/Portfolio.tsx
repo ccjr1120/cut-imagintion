@@ -11,9 +11,9 @@ function readParam(name: string) {
   return new URLSearchParams(window.location.search).get(name);
 }
 
-function WorkItem({ project, index, total, variant }: { project: Project; index: number; total: number; variant: number }) {
+function WorkItem({ project, index, total, variant, orientation }: { project: Project; index: number; total: number; variant: number; orientation: 'landscape' | 'portrait' }) {
   return (
-    <article className={`work-page reveal-variant-${(variant % 6) + 1}`} aria-labelledby={`project-${project.id}`}>
+    <article className={`work-page reveal-variant-${(variant % 6) + 1}`} data-orientation={orientation} aria-labelledby={`project-${project.id}`}>
       <div className="work-feature">
         <div className="work-video" data-reveal>
           <video src={project.video} poster={project.cover} controls playsInline preload="metadata" aria-label={`${project.title}作品视频`} />
@@ -114,34 +114,41 @@ export function Portfolio({ content }: { content: PortfolioContent }) {
     return () => { observer.disconnect(); playbackObserver.disconnect(); };
   }, [selectedCategory]);
 
+  const renderCategoryPanel = (category: (typeof content.categories)[number], index: number) => {
+    const cover = category.cover || content.projects.find((project) => project.categoryId === category.id)?.cover || '';
+    return (
+      <button className="category-panel" type="button" key={category.id} data-orientation={category.orientation || 'landscape'} onClick={() => navigate(category.id, null)} aria-label={`查看${category.title}作品`}>
+        <img src={cover} alt="" aria-hidden="true" />
+        <span className="category-shade" aria-hidden="true" />
+        <span className="category-index">{String(index + 1).padStart(2, '0')}</span>
+        <span className="category-copy">
+          <span className="category-en">{category.enTitle}</span>
+          <strong>{category.title}</strong>
+          <span className="category-description">{category.description}</span>
+        </span>
+        <ArrowUpRight className="category-arrow" aria-hidden="true" />
+      </button>
+    );
+  };
+
   if (!activeCategory) {
+    const hasPortraitCategory = content.categories.some((category) => category.orientation === 'portrait');
     return (
       <main className="category-gateway">
         <header className="gateway-header">
           <p className="gateway-name"><span>古梦雪</span><small>GU MENGXUE</small></p>
-          <p>VIDEO EDITOR / SHANGHAI</p>
+          <p>VIDEO EDITOR / HANGZHOU</p>
           <nav className="gateway-nav" aria-label="个人信息">
+            <a href="/resume">简历</a>
             <button type="button" onClick={() => navigate(null, 'about')}>关于</button>
             <button type="button" onClick={() => navigate(null, 'contact')}>联系</button>
           </nav>
         </header>
-        <div className="category-grid" data-density={density} aria-label="作品分类">
-          {content.categories.map((category, index) => {
-            const cover = category.cover || content.projects.find((project) => project.categoryId === category.id)?.cover || '';
-            return (
-            <button className="category-panel" type="button" key={category.id} onClick={() => navigate(category.id, null)} aria-label={`查看${category.title}作品`}>
-              <img src={cover} alt="" aria-hidden="true" />
-              <span className="category-shade" aria-hidden="true" />
-              <span className="category-index">{String(index + 1).padStart(2, '0')}</span>
-              <span className="category-copy">
-                <span className="category-en">{category.enTitle}</span>
-                <strong>{category.title}</strong>
-                <span className="category-description">{category.description}</span>
-              </span>
-              <ArrowUpRight className="category-arrow" aria-hidden="true" />
-            </button>
-            );
-          })}
+        <div className="category-grid" data-density={density} data-layout={hasPortraitCategory ? 'oriented' : 'collage'} aria-label="作品分类">
+          {hasPortraitCategory ? Array.from({ length: Math.ceil(content.categories.length / 2) }, (_, rowIndex) => {
+            const row = content.categories.slice(rowIndex * 2, rowIndex * 2 + 2);
+            return <div className="category-row" key={rowIndex} data-count={row.length} data-first-orientation={row[0]?.orientation || 'landscape'} data-second-orientation={row[1]?.orientation || 'landscape'}>{row.map((category, index) => renderCategoryPanel(category, rowIndex * 2 + index))}</div>;
+          }) : content.categories.map(renderCategoryPanel)}
         </div>
         {activePanel && (
           <div className="gateway-info-overlay">
@@ -151,15 +158,15 @@ export function Portfolio({ content }: { content: PortfolioContent }) {
               {activePanel === 'about' ? (
                 <div className="gateway-info-content">
                   <p className="gateway-info-index">01 / PROFILE</p>
-                  <h2 id="about-panel-title">剪辑不只是连接镜头，而是在时间里安排情绪。</h2>
-                  <div className="gateway-info-copy"><p>我是古梦雪，一名独立视频剪辑师。过去 7 年里，我参与了品牌短片、人物纪录片、音乐影像与数字内容的后期制作。</p><p>我关心画面之间的呼吸、声音留下的空间，以及一个故事如何在恰当的时刻被看见。</p></div>
-                  <dl className="gateway-info-facts"><div><dt>服务</dt><dd>剪辑 / 调色 / 声音设计 / 动态设计</dd></div><div><dt>工作地</dt><dd>上海 / 可远程合作</dd></div><div><dt>语言</dt><dd>中文 / ENGLISH</dd></div></dl>
+                  <h2 id="about-panel-title">把每一次剪辑，做成让观众愿意看下去的下一秒。</h2>
+                  <div className="gateway-info-copy"><p>我是古梦雪，目前在杭州寻找视频剪辑相关岗位。虽然还没有正式工作经验，但我通过信息流广告、口播、影视混剪和 MG 动画等个人项目持续练习，熟悉从素材整理、粗剪到字幕与特效包装的完整流程。</p><p>我重视节奏、信息层级和情绪表达，愿意从具体任务做起，在团队反馈中快速成长，也期待参与真实项目。</p></div>
+                  <dl className="gateway-info-facts"><div><dt>方向</dt><dd>视频剪辑 / 短视频后期 / 特效包装</dd></div><div><dt>工作地</dt><dd>杭州 / 可接受到岗或远程沟通</dd></div><div><dt>经历</dt><dd>个人项目与作品集实践</dd></div></dl>
                 </div>
               ) : (
                 <div className="gateway-info-content gateway-contact-content">
-                  <p className="gateway-info-index">02 / CONTACT</p><h2 id="contact-panel-title">有一个故事准备开剪？</h2>
-                  <a className="gateway-contact-mail" href="mailto:hello@gumengxue.studio">HELLO@GUMENGXUE.STUDIO <ArrowUpRight /></a>
-                  <div className="gateway-contact-meta"><p className="availability"><span /> 2026 档期开放</p><div><a href="#">VIMEO</a><a href="#">INSTAGRAM</a><a href="#">小红书</a></div></div>
+                  <p className="gateway-info-index">02 / CONTACT</p><h2 id="contact-panel-title">正在寻找杭州的视频剪辑机会。</h2>
+                  <div className="gateway-contact-mail" aria-label="微信号 Febirle">微信号：Febirle</div>
+                  <div className="gateway-contact-meta"><p className="availability"><span /> 杭州 · 视频剪辑岗位求职中</p><div><span>简历与作品集可按需发送</span></div></div>
                 </div>
               )}
             </aside>
@@ -170,7 +177,7 @@ export function Portfolio({ content }: { content: PortfolioContent }) {
   }
 
   return (
-    <main className="portfolio-shell">
+    <main className="portfolio-shell" data-orientation={activeCategory.orientation || 'landscape'}>
       <header className="work-site-header">
         <div className="work-header-brand">
           <button className="category-back" type="button" onClick={() => navigate(null, null)} aria-label="返回作品分类" title="返回作品分类"><ArrowLeft size={17} /></button>
@@ -181,7 +188,7 @@ export function Portfolio({ content }: { content: PortfolioContent }) {
       <section className="works-section" id="work" aria-labelledby="work-title">
         <header className="section-header" data-reveal><p className="section-index">01 / {activeCategory.enTitle}</p><h2 id="work-title">{activeCategory.title}</h2><p>{activeCategory.description}。</p></header>
         <div className="works-list">
-          {visibleProjects.length ? visibleProjects.map((project, index) => <WorkItem key={project.id} project={project} index={index} total={visibleProjects.length} variant={content.projects.indexOf(project)} />) : <p className="empty-projects">这个分类还没有发布项目。</p>}
+          {visibleProjects.length ? visibleProjects.map((project, index) => <WorkItem key={project.id} project={project} index={index} total={visibleProjects.length} variant={content.projects.indexOf(project)} orientation={activeCategory.orientation || 'landscape'} />) : <p className="empty-projects">这个分类还没有发布项目。</p>}
         </div>
       </section>
     </main>
