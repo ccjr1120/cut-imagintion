@@ -58,6 +58,12 @@ SCP_ARGS+=(
   -o ControlPersist=120
   -o ControlPath="$SSH_CONTROL_PATH"
 )
+RSYNC_SSH_COMMAND="ssh -p $DEPLOY_PORT -o ConnectTimeout=15 -o ControlMaster=auto -o ControlPersist=120 -o ControlPath=$SSH_CONTROL_PATH"
+if [[ -n "${DEPLOY_SSH_KEY:-}" ]]; then
+  printf -v DEPLOY_SSH_KEY_QUOTED '%q' "$DEPLOY_SSH_KEY"
+  RSYNC_SSH_COMMAND+=" -i $DEPLOY_SSH_KEY_QUOTED"
+fi
+RSYNC_ARGS=(rsync --progress --partial --inplace -e "$RSYNC_SSH_COMMAND")
 TARGET="${DEPLOY_USER}@${DEPLOY_HOST}"
 
 cleanup_ssh() {
@@ -95,6 +101,32 @@ run_scp() {
     sleep "$((attempt * 2))"
     attempt=$((attempt + 1))
   done
+}
+
+run_rsync() {
+  local attempt=1 status
+  while (( attempt <= 4 )); do
+    if [[ -n "${DEPLOY_PASSWORD:-}" ]]; then
+      SSHPASS="$DEPLOY_PASSWORD" sshpass -e "${RSYNC_ARGS[@]}" "$@" && return 0
+    else
+      "${RSYNC_ARGS[@]}" "$@" && return 0
+    fi
+    status=$?
+    if (( status != 255 && status != 12 && status != 20 )) || (( attempt == 4 )); then return "$status"; fi
+    printf 'Upload connection interrupted; resuming (%s/4)...\n' "$((attempt + 1))" >&2
+    sleep "$((attempt * 2))"
+    attempt=$((attempt + 1))
+  done
+}
+
+upload_file() {
+  local source="$1" destination="$2"
+  if (( USE_RSYNC )); then
+    run_rsync "$source" "$destination"
+  else
+    printf 'Uploading %s (scp fallback; progress meter follows)...\n' "$(basename "$source")" >&2
+    run_scp "$source" "$destination"
+  fi
 }
 
 cleanup_archive() {
@@ -143,7 +175,11 @@ rm -rf .deploy/storage/media
 # silently send an empty/partial stream after the original stdin is consumed.
 ARCHIVE_FILE="$(mktemp -t gmx-deploy.XXXXXX)"
 trap cleanup_deploy EXIT
-COPYFILE_DISABLE=1 COPY_EXTENDED_ATTRIBUTES_DISABLE=1 tar -C .deploy -czf "$ARCHIVE_FILE" .
+# Do not embed macOS Finder/provenance metadata in the Linux deployment archive.
+# Without these flags GNU tar prints LIBARCHIVE.xattr.* warnings while extracting.
+COPYFILE_DISABLE=1 COPY_EXTENDED_ATTRIBUTES_DISABLE=1 tar --no-xattrs --no-mac-metadata -C .deploy -czf "$ARCHIVE_FILE" .
+gzip -t "$ARCHIVE_FILE"
+tar -tzf "$ARCHIVE_FILE" >/dev/null
 printf 'Deployment archive: '
 du -h "$ARCHIVE_FILE" | cut -f1
 
@@ -155,11 +191,20 @@ if ! run_ssh "$TARGET" "command -v node >/dev/null 2>&1"; then
   printf 'Node.js 22+ is required on the server.\n' >&2
   exit 1
 fi
+USE_RSYNC=0
+if command -v rsync >/dev/null 2>&1 && run_ssh "$TARGET" "command -v rsync >/dev/null 2>&1"; then
+  USE_RSYNC=1
+  printf 'Upload transport: rsync (resumable progress)\n'
+else
+  printf 'Upload transport: scp (progress meter depends on terminal)\n'
+fi
 run_ssh "$TARGET" "mkdir -p '$DEPLOY_PATH/app' '$DEPLOY_PATH/shared/media' '$DEPLOY_PATH/shared/data'"
 REMOTE_ARCHIVE="$DEPLOY_PATH/.${DEPLOY_SERVICE_NAME}.deploy.tar.gz"
 REMOTE_STAGE="$DEPLOY_PATH/.${DEPLOY_SERVICE_NAME}.app.$$.new"
-run_scp "$ARCHIVE_FILE" "$TARGET:$REMOTE_ARCHIVE"
+REMOTE_ARCHIVE_UPLOAD="$REMOTE_ARCHIVE.uploading"
+upload_file "$ARCHIVE_FILE" "$TARGET:$REMOTE_ARCHIVE_UPLOAD"
 run_ssh "$TARGET" "set -e
+mv '$REMOTE_ARCHIVE_UPLOAD' '$REMOTE_ARCHIVE'
 rm -rf '$REMOTE_STAGE'
 mkdir -p '$REMOTE_STAGE'
 tar -tzf '$REMOTE_ARCHIVE' >/dev/null
@@ -172,7 +217,7 @@ mv '$DEPLOY_PATH/app' '$DEPLOY_PATH/app.previous'
 mv '$REMOTE_STAGE' '$DEPLOY_PATH/app'
 rm -rf '$DEPLOY_PATH/app.previous' '$REMOTE_ARCHIVE'"
 if ! run_ssh "$TARGET" "test -f '$DEPLOY_PATH/shared/data/portfolio.json'"; then
-  run_scp "$ROOT_DIR/data/portfolio.json" "$TARGET:$DEPLOY_PATH/shared/data/portfolio.json"
+  upload_file "$ROOT_DIR/data/portfolio.json" "$TARGET:$DEPLOY_PATH/shared/data/portfolio.json"
 fi
 
 ENV_TEMP="/tmp/${DEPLOY_SERVICE_NAME}.env.$$"

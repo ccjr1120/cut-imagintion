@@ -384,7 +384,7 @@ export function AdminDashboard() {
   const selectedCategory = section === 'categories' ? content?.categories.find((item) => item.id === selectedId) : undefined;
   const selectedProject = section === 'projects' ? content?.projects.find((item) => item.id === selectedId) : undefined;
   const selectedResumeRole = section === 'resume' && resumeRoles.includes(selectedId as ResumeRole) ? selectedId as ResumeRole : undefined;
-  const list = section === 'categories' ? content?.categories || [] : section === 'projects' ? content?.projects || [] : resumeRoles.map((role) => ({ id: role, title: content?.resume.roleLabels[role].label || role, enTitle: content?.resume.roleLabels[role].shortLabel || '' }));
+  const list = section === 'categories' ? content?.categories || [] : section === 'projects' ? content?.projects || [] : resumeRoles.map((role) => ({ id: role, title: content?.resume.roleLabels[role].label || role, shortLabel: content?.resume.roleLabels[role].shortLabel || '' }));
 
   const projectCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -425,13 +425,13 @@ export function AdminDashboard() {
     if (section === 'resume') return;
     if (section === 'categories') {
       const id = makeId('new-category', content.categories.map((item) => item.id));
-      const category: Category = { id, title: '新分类', enTitle: 'NEW CATEGORY', description: '', cover: '', orientation: 'landscape' };
+      const category: Category = { id, title: '新分类', description: '', cover: '', orientation: 'landscape' };
       mutate((current) => ({ ...current, categories: [...current.categories, category] }));
       setSelectedId(id);
     } else {
       if (!content.categories.length) { setNotice({ type: 'error', message: '请先新建一个分类' }); return; }
       const id = makeId('new-project', content.projects.map((item) => item.id));
-      const project: Project = { id, categoryId: content.categories[0].id, title: '新项目', enTitle: 'NEW PROJECT', type: '', year: String(new Date().getFullYear()), duration: '', description: '', role: '', software: '', plugins: '', cover: '', video: '', screenshots: [] };
+      const project: Project = { id, categoryId: content.categories[0].id, title: '新项目', type: '', year: String(new Date().getFullYear()), duration: '', description: '', role: '', software: '', plugins: '', cover: '', video: '', screenshots: [] };
       mutate((current) => ({ ...current, projects: [...current.projects, project] }));
       setSelectedId(id);
     }
@@ -516,7 +516,7 @@ export function AdminDashboard() {
         <div className="admin-items">
           {list.map((item, index) => {
             const category = section === 'projects' ? content.categories.find((entry) => entry.id === (item as Project).categoryId) : null;
-            return <button type="button" key={item.id} className={selectedId === item.id ? 'selected' : ''} onClick={() => setSelectedId(item.id)}><span>{String(index + 1).padStart(2, '0')}</span><div><strong>{item.title || '未命名'}</strong><small>{category?.title || item.enTitle || '尚未填写'}</small></div><ChevronRight size={16} /></button>;
+            return <button type="button" key={item.id} className={selectedId === item.id ? 'selected' : ''} onClick={() => setSelectedId(item.id)}><span>{String(index + 1).padStart(2, '0')}</span><div><strong>{item.title || '未命名'}</strong><small>{category?.title || (section === 'resume' ? (item as { shortLabel?: string }).shortLabel : '') || '尚未填写'}</small></div><ChevronRight size={16} /></button>;
           })}
           {!list.length && <div className="admin-empty"><p>这里还没有内容</p><button type="button" onClick={addItem}><Plus size={16} />立即新建</button></div>}
         </div>
@@ -535,7 +535,6 @@ export function AdminDashboard() {
               <div className="form-section-heading"><span>01</span><div><h2>分类信息</h2><p>分类名称、首页描述和识别信息</p></div></div>
               <div className="form-grid">
                 <TextField label="分类名称" required value={selectedCategory.title} onChange={(title) => updateCategory({ title })} />
-                <TextField label="英文名称" required value={selectedCategory.enTitle} onChange={(enTitle) => updateCategory({ enTitle })} />
                 <div className="admin-field"><label>分类 ID<span>稳定标识</span></label><input value={selectedCategory.id} disabled /></div>
                 <div className="admin-field"><label>项目数量</label><input value={`${projectCounts[selectedCategory.id] || 0} 个项目`} disabled /></div>
                 <div className="admin-field"><label>视频方向<span>决定前台展示比例</span></label><select value={selectedCategory.orientation || 'landscape'} onChange={(event) => updateCategory({ orientation: event.target.value as Category['orientation'] })}><option value="landscape">横屏（16:9）</option><option value="portrait">竖屏（9:16）</option></select></div>
@@ -551,7 +550,6 @@ export function AdminDashboard() {
               <div className="form-section-heading"><span>01</span><div><h2>基本信息</h2><p>项目标题、分类和前台摘要</p></div></div>
               <div className="form-grid">
                 <TextField label="项目标题" required value={selectedProject.title} onChange={(title) => updateProject({ title })} />
-                <TextField label="英文标题" required value={selectedProject.enTitle} onChange={(enTitle) => updateProject({ enTitle })} />
                 <div className="admin-field"><label>所属分类<span>必填</span></label><select value={selectedProject.categoryId} onChange={(event) => updateProject({ categoryId: event.target.value })}>{content.categories.map((category) => <option value={category.id} key={category.id}>{category.title}</option>)}</select></div>
                 <TextField label="项目类型" value={selectedProject.type} onChange={(type) => updateProject({ type })} placeholder="例如：品牌短片" />
                 <TextField label="年份" value={selectedProject.year} onChange={(year) => updateProject({ year })} />

@@ -3,7 +3,6 @@
     {
       "id": "new-category",
       "title": "信息流",
-      "enTitle": "?",
       "description": "千川广告投放、带货",
       "cover": "",
       "orientation": "portrait"
@@ -11,7 +10,6 @@
     {
       "id": "new-category-2",
       "title": "口播",
-      "enTitle": "koubo",
       "description": "口播带货",
       "cover": "",
       "orientation": "portrait"
@@ -19,7 +17,6 @@
     {
       "id": "new-category-3",
       "title": "混剪",
-      "enTitle": "混剪",
       "description": "动漫，影片混剪",
       "cover": "",
       "orientation": "landscape"
@@ -27,7 +24,6 @@
     {
       "id": "new-category-4",
       "title": "mg动画",
-      "enTitle": "mg",
       "description": "mg扁平化动画，特效",
       "cover": "",
       "orientation": "landscape"
@@ -38,7 +34,6 @@
       "id": "new-project",
       "categoryId": "new-category",
       "title": "垃圾袋信息流推广",
-      "enTitle": "project",
       "type": "信息流推广",
       "year": "2026",
       "duration": "",
@@ -59,7 +54,6 @@
       "id": "new-project-2",
       "categoryId": "new-category",
       "title": "洗面奶信息流推广",
-      "enTitle": "project",
       "type": "",
       "year": "2026",
       "duration": "",
@@ -80,7 +74,6 @@
       "id": "new-project-3",
       "categoryId": "new-category-2",
       "title": "装修避雷口播",
-      "enTitle": "project",
       "type": "知识科普类",
       "year": "2026",
       "duration": "",
@@ -100,7 +93,6 @@
       "id": "new-project-4",
       "categoryId": "new-category-2",
       "title": "汽车宣传口播",
-      "enTitle": "project",
       "type": "广告宣传类",
       "year": "2026",
       "duration": "",
@@ -121,7 +113,6 @@
       "id": "new-project-5",
       "categoryId": "new-category-4",
       "title": "企业运营可视化mg动画",
-      "enTitle": "project",
       "type": "数据分析",
       "year": "2026",
       "duration": "",
@@ -139,7 +130,6 @@
       "id": "new-project-6",
       "categoryId": "new-category-3",
       "title": "动漫混剪",
-      "enTitle": "project",
       "type": "动漫混剪",
       "year": "2026",
       "duration": "",
@@ -159,7 +149,6 @@
       "id": "new-project-7",
       "categoryId": "new-category-3",
       "title": "小巷人家混剪",
-      "enTitle": "project",
       "type": "影视混剪",
       "year": "2026",
       "duration": "",

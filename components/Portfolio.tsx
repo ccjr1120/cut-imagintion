@@ -23,7 +23,6 @@ function WorkItem({ project, index, total, variant, orientation }: { project: Pr
           <div className="work-summary" data-reveal>
             <p>{project.type} · {project.year}{project.duration ? ` · ${project.duration}` : ''}</p>
             <h3 id={`project-${project.id}`}>{project.title}</h3>
-            <p className="work-en-title">{project.enTitle}</p>
             <p className="work-description">{project.description}</p>
           </div>
           <dl className="work-facts" data-reveal>
@@ -126,7 +125,6 @@ export function Portfolio({ content }: { content: PortfolioContent }) {
         <span className="category-shade" aria-hidden="true" />
         <span className="category-index">{String(index + 1).padStart(2, '0')}</span>
         <span className="category-copy">
-          <span className="category-en">{category.enTitle}</span>
           <strong>{category.title}</strong>
           <span className="category-description">{category.description}</span>
         </span>
@@ -188,7 +186,7 @@ export function Portfolio({ content }: { content: PortfolioContent }) {
             <button className="category-back" type="button" onClick={() => navigate(null, null)} aria-label="返回作品分类" title="返回作品分类"><ArrowLeft size={17} /></button>
             <button className="wordmark" type="button" onClick={() => navigate(null, null)} aria-label="返回古梦雪首页">XUE<span>®</span></button>
           </div>
-          <p>{activeCategory.title} / {activeCategory.enTitle}</p><p>{String(visibleProjects.length).padStart(2, '0')} PROJECTS</p>
+            <p>{activeCategory.title}</p><p>{String(visibleProjects.length).padStart(2, '0')} PROJECTS</p>
         </header>
         <section className="directory-section" aria-labelledby="directory-title">
           <div className="directory-intro" data-reveal>
@@ -204,7 +202,7 @@ export function Portfolio({ content }: { content: PortfolioContent }) {
                 <button className="directory-item" type="button" key={project.id} onClick={() => navigate(selectedCategory, null, project.id)} data-orientation={activeCategory.orientation || 'landscape'}>
                   <span className="directory-item-index">{String(index + 1).padStart(2, '0')}</span>
                   <span className="directory-thumb">{project.cover ? <img src={project.cover} alt="" loading="lazy" /> : <span aria-hidden="true">NO COVER</span>}</span>
-                  <span className="directory-item-copy"><strong>{project.title}</strong><span>{project.enTitle}</span><small>{project.type || '视频剪辑'} · {project.year}{project.duration ? ` · ${project.duration}` : ''}</small></span>
+                  <span className="directory-item-copy"><strong>{project.title}</strong><small>{project.type || '视频剪辑'} · {project.year}{project.duration ? ` · ${project.duration}` : ''}</small></span>
                   <ArrowUpRight className="directory-item-arrow" aria-hidden="true" />
                 </button>
               )) : <p className="empty-projects">这个分类还没有发布项目。</p>}
@@ -225,7 +223,7 @@ export function Portfolio({ content }: { content: PortfolioContent }) {
         <p>{activeCategory.title} / {activeProject.title}</p><p>{String(visibleProjects.indexOf(activeProject) + 1).padStart(2, '0')} / {String(visibleProjects.length).padStart(2, '0')}</p>
       </header>
       <section className="works-section" id="work" aria-labelledby="work-title">
-        <header className="section-header" data-reveal><p className="section-index">01 / {activeCategory.enTitle} / DETAIL</p><h2 id="work-title">{activeProject.title}</h2><p>{activeCategory.description}。</p></header>
+        <header className="section-header" data-reveal><p className="section-index">01 / {activeCategory.title} / DETAIL</p><h2 id="work-title">{activeProject.title}</h2><p>{activeCategory.description}。</p></header>
         <div className="works-list">
           <WorkItem project={activeProject} index={visibleProjects.indexOf(activeProject)} total={visibleProjects.length} variant={content.projects.indexOf(activeProject)} orientation={activeCategory.orientation || 'landscape'} />
           <div className="detail-navigation" aria-label="切换项目">

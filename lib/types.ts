@@ -1,7 +1,6 @@
 export type Category = {
   id: string;
   title: string;
-  enTitle: string;
   description: string;
   cover: string;
   orientation: 'landscape' | 'portrait';
@@ -11,7 +10,6 @@ export type Project = {
   id: string;
   categoryId: string;
   title: string;
-  enTitle: string;
   type: string;
   year: string;
   duration: string;

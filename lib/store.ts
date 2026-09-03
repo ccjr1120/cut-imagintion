@@ -31,7 +31,6 @@ function normalizeCategory(value: unknown, index: number): Category {
   return {
     id: requiredText(item.id, '分类 ID', 80),
     title: requiredText(item.title, '分类名称', 80),
-    enTitle: requiredText(item.enTitle, '分类英文名', 100),
     description: text(item.description, '分类描述', 500),
     cover: media(item.cover, '分类封面'),
     // Categories created before orientation was introduced remain landscape.
@@ -46,7 +45,6 @@ function normalizeProject(value: unknown, index: number): Project {
     id: requiredText(item.id, '项目 ID', 80),
     categoryId: requiredText(item.categoryId, '所属分类', 80),
     title: requiredText(item.title, '项目标题', 120),
-    enTitle: requiredText(item.enTitle, '项目英文名', 160),
     type: text(item.type, '项目类型', 80),
     year: text(item.year, '年份', 20),
     duration: text(item.duration, '片长', 20),
